@@ -194,11 +194,11 @@ const TaskBoard = () => {
                             >
                               <div className="space-y-4">
                                 <div className="flex items-center gap-2">
-                                  <div className={`flex items-center gap-1.5 px-2 py-1 rounded-md text-[10px] font-bold uppercase tracking-tight ${priorityColors[task.priority] || priorityColors.Medium}`}>
+                                  <div className={`flex items-center gap-1.5 px-2 py-1 rounded-xl text-[10px] font-bold uppercase tracking-tight ${priorityColors[task.priority] || priorityColors.Medium}`}>
                                     <Flag size={10} fill="currentColor" />
                                     {task.priority}
                                   </div>
-                                  <div className="px-2 py-1 rounded-md text-[10px] font-bold text-sky-600 bg-sky-50 uppercase tracking-tight border border-sky-100">
+                                  <div className="px-2 py-1 rounded-xl text-[10px] font-bold text-sky-600 bg-sky-50 uppercase tracking-tight border border-sky-100">
                                     Q4
                                   </div>
                                 </div>
@@ -257,7 +257,7 @@ const TaskBoard = () => {
                           }}
                         />
                         <div className="flex items-center gap-2 mt-3">
-                          <button onClick={() => createTask(id)} className="px-3 py-1.5 bg-slate-900 text-white text-[10px] font-bold rounded-lg uppercase tracking-widest">Add</button>
+                          <button onClick={() => createTask(id)} className="px-3 py-1.5 bg-slate-900 text-white text-[10px] font-bold rounded-xl uppercase tracking-widest">Add</button>
                           <button onClick={() => setAddingCardTo(null)} className="p-1.5 text-slate-400 hover:text-slate-600 transition-all"><X size={16} /></button>
                         </div>
                       </div>

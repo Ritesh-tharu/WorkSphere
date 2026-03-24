@@ -65,7 +65,7 @@ const Projects = () => {
           <p className="text-sm font-medium text-slate-400">Manage and track all your active initiatives in one place.</p>
         </div>
         <button
-          className="flex items-center gap-2 px-5 py-2.5 bg-slate-900 hover:bg-slate-800 text-white rounded-lg font-bold text-sm transition-all shadow-sm active:scale-95"
+          className="flex items-center gap-2 px-5 py-2.5 bg-slate-900 hover:bg-slate-800 text-white rounded-xl font-bold text-sm transition-all shadow-sm active:scale-95"
           onClick={() => setShowCreateModal(true)}
         >
           <Plus size={18} />

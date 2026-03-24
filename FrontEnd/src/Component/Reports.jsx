@@ -65,10 +65,10 @@ const Reports = () => {
           <p className="text-sm font-medium text-slate-400">High-fidelity performance metrics and predictive mission intelligence.</p>
         </div>
         <div className="flex items-center gap-3">
-          <button className="flex items-center gap-2 px-4 py-2 bg-white border border-slate-200 text-slate-600 rounded-lg font-bold text-xs uppercase tracking-widest transition-all shadow-sm hover:bg-slate-50">
+          <button className="flex items-center gap-2 px-4 py-2 bg-white border border-slate-200 text-slate-600 rounded-xl font-bold text-xs uppercase tracking-widest transition-all shadow-sm hover:bg-slate-50">
             <Download size={14} /> Export Intel
           </button>
-          <button className="flex items-center gap-2 px-4 py-2 bg-slate-900 text-white rounded-lg font-bold text-xs uppercase tracking-widest transition-all shadow-md hover:bg-slate-800">
+          <button className="flex items-center gap-2 px-4 py-2 bg-slate-900 text-white rounded-xl font-bold text-xs uppercase tracking-widest transition-all shadow-md hover:bg-slate-800">
             <FileText size={14} /> Briefing
           </button>
         </div>
@@ -80,7 +80,7 @@ const Reports = () => {
              <button 
                 key={r}
                 onClick={() => setDateRange(r)}
-                className={`px-4 py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-widest transition-all ${dateRange === r ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-400 hover:text-slate-600'}`}
+                className={`px-4 py-1.5 rounded-xl text-[10px] font-bold uppercase tracking-widest transition-all ${dateRange === r ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-400 hover:text-slate-600'}`}
              >
                 {r}
              </button>

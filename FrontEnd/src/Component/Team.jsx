@@ -57,7 +57,7 @@ const Team = () => {
           <p className="text-sm font-medium text-slate-400">Manage your team members and track active invitations.</p>
         </div>
         <button 
-          className="flex items-center gap-2 px-5 py-2.5 bg-slate-900 hover:bg-slate-800 text-white rounded-lg font-bold text-sm transition-all shadow-sm active:scale-95"
+          className="flex items-center gap-2 px-5 py-2.5 bg-slate-900 hover:bg-slate-800 text-white rounded-xl font-bold text-sm transition-all shadow-sm active:scale-95"
           onClick={() => setShowInviteModal(true)}
         >
           <UserPlus size={18} />

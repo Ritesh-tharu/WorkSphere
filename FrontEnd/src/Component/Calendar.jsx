@@ -95,13 +95,13 @@ const Calendar = () => {
         
         <div className="flex items-center gap-4 bg-white p-1.5 rounded-xl border border-slate-200 shadow-sm">
           <div className="flex items-center gap-2 px-2">
-            <button onClick={prevMonth} className="p-1.5 rounded-lg hover:bg-slate-50 text-slate-400 transition-all"><ChevronLeft size={18} /></button>
+            <button onClick={prevMonth} className="p-1.5 rounded-xl hover:bg-slate-50 text-slate-400 transition-all"><ChevronLeft size={18} /></button>
             <span className="text-sm font-bold text-slate-900 min-w-[120px] text-center">
               {monthNames[currentDate.getMonth()]} {currentDate.getFullYear()}
             </span>
-            <button onClick={nextMonth} className="p-1.5 rounded-lg hover:bg-slate-50 text-slate-400 transition-all"><ChevronRight size={18} /></button>
+            <button onClick={nextMonth} className="p-1.5 rounded-xl hover:bg-slate-50 text-slate-400 transition-all"><ChevronRight size={18} /></button>
           </div>
-          <button onClick={() => setShowEventModal(true)} className="flex items-center gap-2 px-4 py-2 bg-slate-900 hover:bg-slate-800 text-white rounded-lg font-bold text-xs uppercase tracking-widest transition-all ml-2 shadow-sm">
+          <button onClick={() => setShowEventModal(true)} className="flex items-center gap-2 px-4 py-2 bg-slate-900 hover:bg-slate-800 text-white rounded-xl font-bold text-xs uppercase tracking-widest transition-all ml-2 shadow-sm">
             <Plus size={14} /> New Event
           </button>
         </div>
@@ -127,14 +127,14 @@ const Calendar = () => {
                   >
                     {date && (
                       <div className="space-y-2">
-                        <div className={`text-xs font-bold w-7 h-7 flex items-center justify-center rounded-lg transition-all ${isToday(date) ? 'bg-slate-900 text-white shadow-md' : 'text-slate-400 group-hover:text-slate-900'}`}>
+                        <div className={`text-xs font-bold w-7 h-7 flex items-center justify-center rounded-xl transition-all ${isToday(date) ? 'bg-slate-900 text-white shadow-md' : 'text-slate-400 group-hover:text-slate-900'}`}>
                           {date.getDate()}
                         </div>
                         <div className="space-y-1">
                           {dateEvents.slice(0, 3).map(event => (
                             <div 
                               key={event._id}
-                              className="px-2 py-1 rounded-md text-[9px] font-bold truncate flex items-center gap-1.5"
+                              className="px-2 py-1 rounded-xl text-[9px] font-bold truncate flex items-center gap-1.5"
                               style={{ backgroundColor: `${event.color}15`, color: event.color }}
                             >
                                <div className="w-1 h-3 rounded-full shrink-0" style={{ backgroundColor: event.color }} />

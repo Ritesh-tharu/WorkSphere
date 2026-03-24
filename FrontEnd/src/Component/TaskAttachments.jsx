@@ -82,7 +82,7 @@ const TaskAttachments = ({ taskId, attachments, onUpdate }) => {
            <Paperclip size={14} className="text-slate-400" />
            <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Legacy Files ({attachments?.length || 0})</span>
         </div>
-        <label className="flex items-center gap-2 px-3 py-1.5 bg-slate-900 hover:bg-slate-800 text-white rounded-lg text-[10px] font-bold cursor-pointer transition-all shadow-sm uppercase tracking-widest">
+        <label className="flex items-center gap-2 px-3 py-1.5 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-[10px] font-bold cursor-pointer transition-all shadow-sm uppercase tracking-widest">
           <Upload size={12} strokeWidth={3} />
           <span>Upload</span>
           <input type="file" multiple className="hidden" onChange={handleFileUpload} disabled={uploading} />
@@ -104,7 +104,7 @@ const TaskAttachments = ({ taskId, attachments, onUpdate }) => {
       <div className="grid grid-cols-1 gap-2">
         {attachments?.map((a) => (
           <div key={a._id} className="group flex items-center gap-3 p-3 bg-white border border-slate-100 rounded-xl hover:border-slate-300 hover:shadow-sm transition-all">
-            <div className="w-10 h-10 bg-slate-50 rounded-lg flex items-center justify-center border border-slate-100 shrink-0">
+            <div className="w-10 h-10 bg-slate-50 rounded-xl flex items-center justify-center border border-slate-100 shrink-0">
               {getFileIcon(a.mimeType)}
             </div>
             <div className="flex-1 min-w-0">
@@ -116,8 +116,8 @@ const TaskAttachments = ({ taskId, attachments, onUpdate }) => {
               </div>
             </div>
             <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-all">
-              <button onClick={() => handleDownload(a)} className="p-1.5 text-slate-400 hover:text-slate-900 hover:bg-slate-50 rounded-md"><Download size={14} /></button>
-              <button onClick={() => handleDelete(a._id)} className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-md"><Trash2 size={14} /></button>
+              <button onClick={() => handleDownload(a)} className="p-1.5 text-slate-400 hover:text-slate-900 hover:bg-slate-50 rounded-xl"><Download size={14} /></button>
+              <button onClick={() => handleDelete(a._id)} className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-xl"><Trash2 size={14} /></button>
             </div>
           </div>
         ))}
