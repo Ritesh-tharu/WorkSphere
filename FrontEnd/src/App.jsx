@@ -6,6 +6,7 @@ import {
   Navigate,
 } from "react-router-dom";
 
+import Landing from "./Component/Landing";
 import Login from "./Component/Login";
 import Signup from "./Component/Signup";
 import Dashboard from "./Component/Dashboard";
@@ -16,16 +17,16 @@ import ProtectedRoute from "./Component/ProtectedRoute";
 import "./App.css";
 
 function App() {
-  const token = localStorage.getItem("token");
+  React.useEffect(() => {
+    const savedTheme = localStorage.getItem("theme") || "light";
+    document.documentElement.setAttribute("data-theme", savedTheme);
+  }, []);
 
   return (
     <Router>
       <Routes>
         {/* Public Routes */}
-        <Route 
-          path="/" 
-          element={token ? <Navigate to="/dashboard" replace /> : <Navigate to="/login" replace />} 
-        />
+        <Route path="/" element={<Landing />} />
         <Route path="/login" element={<Login />} />
         <Route path="/signup" element={<Signup />} />
 

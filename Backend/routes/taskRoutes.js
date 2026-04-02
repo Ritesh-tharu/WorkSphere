@@ -20,6 +20,7 @@ router.use(protect);
 
 // Task statistics
 router.get("/stats", getTaskStats);
+router.get("/search", getTasks);
 
 // Bulk update positions (for drag and drop)
 router.post("/positions", updateTaskPositions);

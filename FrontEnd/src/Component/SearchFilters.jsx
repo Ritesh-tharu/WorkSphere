@@ -142,17 +142,17 @@ const SearchFilters = ({ onSearchResults, initialFilters = {} }) => {
 
   return (
     <div className="relative w-full max-w-xl group">
-       <div className="flex items-center gap-3">
-          <div className="relative flex-1">
-             <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 group-focus-within:text-indigo-400 transition-colors" size={18} />
+       <div className="flex items-center gap-4">
+          <div className="relative flex-1 group/input">
+             <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-secondary group-focus-within/input:text-indigo-500 transition-colors" size={16} />
              <input 
-                className="w-full bg-white/5 border border-white/5 rounded-[1.25rem] pl-12 pr-12 py-3 text-sm text-slate-200 placeholder:text-slate-600 focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500/30 transition-all font-medium"
+                className="w-full bg-card/40 backdrop-blur-md border border-base rounded-2xl pl-12 pr-12 py-2.5 text-xs text-primary placeholder:text-slate-400 focus:ring-4 focus:ring-indigo-500/5 focus:border-indigo-500/30 transition-all font-bold tracking-tight shadow-sm"
                 placeholder="Search across nodes…"
                 value={searchTerm}
                 onChange={e => setSearchTerm(e.target.value)}
              />
              {searchTerm && (
-                <button onClick={() => setSearchTerm("")} className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-500 hover:text-white transition-all p-1">
+                <button onClick={() => setSearchTerm("")} className="absolute right-4 top-1/2 -translate-y-1/2 text-secondary hover:text-primary transition-all p-1">
                    <X size={14} />
                 </button>
              )}
@@ -160,12 +160,12 @@ const SearchFilters = ({ onSearchResults, initialFilters = {} }) => {
           
           <button 
              onClick={() => setShowFilters(!showFilters)}
-             className={`flex items-center gap-2.5 px-6 py-3 rounded-[1.25rem] font-black text-[10px] uppercase tracking-widest transition-all border relative ${showFilters ? 'bg-indigo-600 text-white border-indigo-500' : 'bg-white/5 text-slate-400 border-white/5 hover:border-white/10'}`}
+             className={`flex items-center gap-2.5 px-5 py-2.5 rounded-2xl font-black text-[9px] uppercase tracking-widest transition-all border relative shadow-sm active:scale-95 ${showFilters ? 'bg-indigo-600 text-white border-indigo-500 shadow-indigo-600/20' : 'bg-card/40 text-secondary border-base hover:border-indigo-500/20'}`}
           >
-             <Filter size={16} />
-             <span>Filter</span>
+             <Filter size={14} />
+             <span>Refine</span>
              {getActiveFilterCount() > 0 && (
-                <span className="absolute -top-2 -right-2 w-5 h-5 bg-indigo-500 text-white rounded-full flex items-center justify-center text-[10px] font-black border-2 border-slate-950">
+                <span className="absolute -top-1.5 -right-1.5 w-5 h-5 bg-indigo-500 text-white rounded-full flex items-center justify-center text-[9px] font-black border-2 border-white shadow-lg">
                    {getActiveFilterCount()}
                 </span>
              )}
@@ -173,24 +173,40 @@ const SearchFilters = ({ onSearchResults, initialFilters = {} }) => {
        </div>
 
        {showFilters && (
-          <div className="absolute top-full left-0 right-0 mt-4 z-[60] animate-in slide-in-from-top-4 duration-300">
-             <div className="glass-card rounded-[2.5rem] p-8 shadow-2xl shadow-indigo-500/10 space-y-8 border-indigo-500/20">
-                <div className="flex items-center justify-between border-b border-white/5 pb-6">
-                   <h3 className="text-sm font-black text-white uppercase tracking-widest flex items-center gap-3">
-                      <Layers className="text-indigo-400" size={18} /> Heuristic Filters
-                   </h3>
-                   <button onClick={() => toggleFilter('isArchived', !filters.isArchived)} className="text-[10px] font-black text-slate-500 uppercase tracking-widest hover:text-rose-400 transition-colors">Reset All</button>
+          <div className="absolute top-full left-0 right-0 mt-4 z-[60] animate-in slide-in-from-top-4 zoom-in-95 duration-300">
+             <div className="bg-card/90 backdrop-blur-xl rounded-[2.5rem] p-10 shadow-2xl border border-indigo-500/20 space-y-10">
+                <div className="flex items-center justify-between border-b border-base pb-6">
+                   <div className="space-y-1">
+                     <h3 className="text-sm font-black text-primary uppercase tracking-[0.2em] flex items-center gap-3">
+                        <Layers className="text-indigo-500" size={18} /> Tactical Options
+                     </h3>
+                     <p className="text-[10px] font-bold text-secondary uppercase tracking-widest opacity-60">High-velocity node filtering</p>
+                   </div>
+                   <button 
+                    onClick={() => setFilters({
+                      status: [],
+                      priority: [],
+                      project: "",
+                      assignedTo: "",
+                      dueDate: "",
+                      tags: [],
+                      isArchived: false,
+                    })} 
+                    className="px-4 py-2 bg-main border border-base rounded-xl text-[9px] font-black text-secondary uppercase tracking-widest hover:text-rose-500 hover:border-rose-500/20 transition-all"
+                   >
+                     Reset Hub
+                   </button>
                 </div>
 
-                <div className="grid grid-cols-2 gap-8">
-                   <div className="space-y-4">
-                      <label className="text-[9px] font-black text-slate-600 uppercase tracking-widest block px-1">Tactical Status</label>
-                      <div className="flex flex-wrap gap-2">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
+                   <div className="space-y-5">
+                      <label className="text-[10px] font-black text-secondary uppercase tracking-[0.2em] block px-1">Tactical Status</label>
+                      <div className="flex flex-wrap gap-2.5">
                          {statusOptions.map(opt => (
                             <button 
                                key={opt.value}
                                onClick={() => toggleFilter('status', opt.value)}
-                               className={`px-3 py-1.5 rounded-xl text-[9px] font-black uppercase tracking-widest border transition-all ${filters.status.includes(opt.value) ? 'bg-white/10 text-white border-white/20' : 'text-slate-500 border-transparent hover:bg-white/5'}`}
+                               className={`px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest border transition-all active:scale-95 ${filters.status.includes(opt.value) ? 'bg-indigo-600 text-white border-indigo-500 shadow-lg shadow-indigo-600/10' : 'bg-main text-secondary border-base hover:border-indigo-500/20'}`}
                             >
                                {opt.label}
                             </button>
@@ -198,14 +214,14 @@ const SearchFilters = ({ onSearchResults, initialFilters = {} }) => {
                       </div>
                    </div>
 
-                   <div className="space-y-4">
-                      <label className="text-[9px] font-black text-slate-600 uppercase tracking-widest block px-1">Priority Level</label>
-                      <div className="flex flex-wrap gap-2">
+                   <div className="space-y-5">
+                      <label className="text-[10px] font-black text-secondary uppercase tracking-[0.2em] block px-1">Priority Level</label>
+                      <div className="flex flex-wrap gap-2.5">
                          {priorityOptions.map(opt => (
                             <button 
                                key={opt.value}
                                onClick={() => toggleFilter('priority', opt.value)}
-                               className={`px-3 py-1.5 rounded-xl text-[9px] font-black uppercase tracking-widest border transition-all ${filters.priority.includes(opt.value) ? 'bg-white/10 text-white border-white/20' : 'text-slate-500 border-transparent hover:bg-white/5'}`}
+                               className={`px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest border transition-all active:scale-95 ${filters.priority.includes(opt.value) ? 'bg-indigo-600 text-white border-indigo-500 shadow-lg shadow-indigo-600/10' : 'bg-main text-secondary border-base hover:border-indigo-500/20'}`}
                             >
                                {opt.label}
                             </button>
@@ -214,52 +230,76 @@ const SearchFilters = ({ onSearchResults, initialFilters = {} }) => {
                    </div>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                   <div className="space-y-3">
-                      <label className="text-[9px] font-black text-slate-600 uppercase tracking-widest px-1">Project Hub</label>
-                      <div className="relative">
-                         <Folder className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-600" size={14} />
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                   <div className="space-y-4">
+                      <label className="text-[10px] font-black text-secondary uppercase tracking-[0.2em] px-1">Target Project</label>
+                      <div className="relative group/sel">
+                         <Folder className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within/sel:text-indigo-500 transition-colors" size={14} />
                          <select 
                             value={filters.project}
                             onChange={e => setFilters({...filters, project: e.target.value})}
-                            className="w-full bg-slate-950/50 border border-white/5 rounded-xl pl-10 pr-4 py-3 text-[10px] font-black text-slate-400 uppercase tracking-widest appearance-none focus:ring-1 focus:ring-indigo-500/20"
+                            className="w-full bg-main border border-base rounded-2xl pl-10 pr-4 py-3 text-[11px] font-bold text-primary uppercase tracking-widest appearance-none focus:ring-4 focus:ring-indigo-500/5 focus:border-indigo-500/30 outline-none transition-all"
                          >
-                            <option value="">Global Search</option>
+                            <option value="">Global Workspace</option>
                             {projects.map(p => <option key={p._id} value={p._id}>{p.name}</option>)}
                          </select>
-                         <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-600 pointer-events-none" size={14} />
+                         <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" size={14} />
                       </div>
                    </div>
 
-                   <div className="space-y-3">
-                      <label className="text-[9px] font-black text-slate-600 uppercase tracking-widest px-1">Time Horizon</label>
-                      <div className="relative">
-                         <Calendar className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-600" size={14} />
+                   <div className="space-y-4">
+                      <label className="text-[10px] font-black text-secondary uppercase tracking-[0.2em] px-1">Time Horizon</label>
+                      <div className="relative group/sel">
+                         <Calendar className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within/sel:text-indigo-500 transition-colors" size={14} />
                          <select 
                             value={filters.dueDate}
                             onChange={e => setFilters({...filters, dueDate: e.target.value})}
-                            className="w-full bg-slate-950/50 border border-white/5 rounded-xl pl-10 pr-4 py-3 text-[10px] font-black text-slate-400 uppercase tracking-widest appearance-none focus:ring-1 focus:ring-indigo-500/20"
+                            className="w-full bg-main border border-base rounded-2xl pl-10 pr-4 py-3 text-[11px] font-bold text-primary uppercase tracking-widest appearance-none focus:ring-4 focus:ring-indigo-500/5 focus:border-indigo-500/30 outline-none transition-all"
                          >
-                            <option value="">Any Time</option>
+                            <option value="">Infinity View</option>
                             <option value="today">Now / Today</option>
                             <option value="this-week">Active Cycle</option>
-                            <option value="overdue" className="text-rose-400 font-bold">Overdue Alert</option>
+                            <option value="overdue">Overdue Alert</option>
                          </select>
-                         <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-600 pointer-events-none" size={14} />
+                         <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" size={14} />
+                      </div>
+                   </div>
+
+                   <div className="space-y-4">
+                      <label className="text-[10px] font-black text-secondary uppercase tracking-[0.2em] px-1">Lead Operator</label>
+                      <div className="relative group/sel">
+                         <Users className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within/sel:text-indigo-500 transition-colors" size={14} />
+                         <select 
+                            value={filters.assignedTo}
+                            onChange={e => setFilters({...filters, assignedTo: e.target.value})}
+                            className="w-full bg-main border border-base rounded-2xl pl-10 pr-4 py-3 text-[11px] font-bold text-primary uppercase tracking-widest appearance-none focus:ring-4 focus:ring-indigo-500/5 focus:border-indigo-500/30 outline-none transition-all"
+                         >
+                            <option value="">All Operators</option>
+                            {users.map(u => <option key={u._id} value={u._id}>{u.name}</option>)}
+                         </select>
+                         <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" size={14} />
                       </div>
                    </div>
                 </div>
 
-                <div className="flex items-center justify-between pt-4 border-t border-white/5">
-                   <div className="flex items-center gap-4">
+                <div className="flex items-center justify-between pt-8 border-t border-base">
+                   <div className="flex items-center gap-6">
                       {loading && (
-                         <div className="flex items-center gap-2">
-                            <div className="w-3 h-3 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin" />
-                            <span className="text-[9px] font-black text-slate-600 uppercase tracking-tighter italic">Syncing…</span>
+                         <div className="flex items-center gap-3">
+                            <div className="w-4 h-4 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin" />
+                            <span className="text-[10px] font-black text-secondary uppercase tracking-widest italic animate-pulse">Syncing Hub…</span>
                          </div>
                       )}
+                      {!loading && getActiveFilterCount() > 0 && (
+                        <p className="text-[10px] font-bold text-indigo-500 uppercase tracking-widest">Applying {getActiveFilterCount()} node filters</p>
+                      )}
                    </div>
-                   <button onClick={() => setShowFilters(false)} className="px-6 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-[9px] font-black uppercase tracking-widest transition-all">Apply Heuristics</button>
+                   <button 
+                    onClick={() => setShowFilters(false)} 
+                    className="px-10 py-3.5 bg-slate-900 dark:bg-indigo-600 text-white rounded-2xl text-[11px] font-black uppercase tracking-widest transition-all shadow-xl shadow-indigo-600/20 active:scale-95"
+                   >
+                    Apply Tactical View
+                   </button>
                 </div>
              </div>
           </div>

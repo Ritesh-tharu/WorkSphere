@@ -91,14 +91,20 @@ const userSchema = new mongoose.Schema(
     },
     password: {
       type: String,
-      required: true,
+      required: function() { return !this.googleId; }, // Required only if not a Google user
       minlength: 6,
     },
     phoneNumber: {
       type: String,
-      required: true,
+      required: false, // Making it optional for now to support quick signups
       unique: true,
+      sparse: true, // Allow multiple nulls
       match: [/^\d{10}$/, "Please enter a valid 10-digit phone number"],
+    },
+    googleId: {
+      type: String,
+      unique: true,
+      sparse: true,
     },
     dateOfBirth: {
       type: Date,
@@ -133,6 +139,10 @@ const userSchema = new mongoose.Schema(
     invitedBy: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
+    },
+    notificationPreferences: {
+      desktop: { type: Boolean, default: true },
+      sound: { type: Boolean, default: true },
     },
   },
   { timestamps: true },

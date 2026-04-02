@@ -9,7 +9,7 @@ import {
   Clock,
 } from "lucide-react";
 
-const Calendar = () => {
+const Calendar = ({ onEventClick }) => {
   const [currentDate, setCurrentDate] = useState(new Date());
   const [events, setEvents] = useState([]);
   const [showEventModal, setShowEventModal] = useState(false);
@@ -134,7 +134,11 @@ const Calendar = () => {
                           {dateEvents.slice(0, 3).map(event => (
                             <div 
                               key={event._id}
-                              className="px-2 py-1 rounded-xl text-[9px] font-bold truncate flex items-center gap-1.5"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                if (onEventClick) onEventClick(event);
+                              }}
+                              className="px-2 py-1 rounded-xl text-[9px] font-bold truncate flex items-center gap-1.5 hover:brightness-95 active:scale-95 transition-all"
                               style={{ backgroundColor: `${event.color}15`, color: event.color }}
                             >
                                <div className="w-1 h-3 rounded-full shrink-0" style={{ backgroundColor: event.color }} />
@@ -161,10 +165,14 @@ const Calendar = () => {
               </h3>
               <div className="space-y-6">
                  {events.slice(0, 5).map(event => (
-                   <div key={event._id} className="relative pl-4 border-l-2 border-slate-100 space-y-1 group">
+                   <div 
+                     key={event._id} 
+                     onClick={() => onEventClick && onEventClick(event)}
+                     className="relative pl-4 border-l-2 border-slate-100 space-y-1 group cursor-pointer hover:border-indigo-500 transition-all"
+                   >
                       <p className="text-[9px] font-bold text-slate-400 uppercase">{new Date(event.startDate).toLocaleDateString()}</p>
-                      <h4 className="text-xs font-bold text-slate-800 truncate">{event.title}</h4>
-                      <p className="text-[10px] text-slate-400 font-medium truncate">{event.description || "No mission brief."}</p>
+                      <h4 className="text-xs font-bold text-slate-800 truncate group-hover:text-indigo-600 transition-colors">{event.title}</h4>
+                      <p className="text-[10px] text-slate-400 font-medium truncate">{event.description || (event.type === 'task' ? `Task: ${event.status}` : "No mission brief.")}</p>
                    </div>
                  ))}
                  {!events.length && <p className="text-xs font-bold text-slate-300 uppercase tracking-widest text-center py-10">Static horizon.</p>}

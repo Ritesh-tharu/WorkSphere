@@ -20,7 +20,7 @@ exports.getProjects = async (req, res) => {
     const projectsWithStats = await Promise.all(
       projects.map(async (project) => {
         const taskCounts = await Task.aggregate([
-          { $match: { project: project._id } },
+          { $match: { project: project._id, isArchived: false } }, // Changed to 'project' field matching my recent task move
           {
             $group: {
               _id: "$status",
@@ -29,21 +29,24 @@ exports.getProjects = async (req, res) => {
           },
         ]);
 
-        const stats = {
-          total: 0,
-          todo: 0,
-          doing: 0,
-          completed: 0,
-        };
-
+        const stats = { total: 0, completed: 0 };
         taskCounts.forEach((item) => {
           stats.total += item.count;
-          stats[item._id] = item.count;
+          if (item._id === 'completed' || item._id === 'done') {
+            stats.completed += item.count;
+          }
+          stats[item._id] = item.count; // Store any dynamic status too
         });
+
+        // Calculate progress automatically
+        const progress = stats.total > 0 
+          ? Math.round((stats.completed / stats.total) * 100) 
+          : 0;
 
         return {
           ...project.toObject(),
           taskStats: stats,
+          progress: progress, // Override model field with real-time calc
         };
       }),
     );

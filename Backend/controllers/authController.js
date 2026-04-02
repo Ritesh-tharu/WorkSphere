@@ -2,6 +2,8 @@
 const User = require("../models/User");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
+const { OAuth2Client } = require("google-auth-library");
+const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 
 // Generate JWT
 const generateToken = (id) => {
@@ -73,6 +75,7 @@ const loginUser = async (req, res) => {
         jobTitle: user.jobTitle,
         bio: user.bio,
         profilePhoto: user.profilePhoto,
+        notificationPreferences: user.notificationPreferences,
         token: generateToken(user._id),
       });
     } else {
@@ -126,8 +129,24 @@ const updateProfile = async (req, res) => {
     user.jobTitle = jobTitle || user.jobTitle;
     user.bio = bio || user.bio;
 
-    // Handle profile photo upload
-    if (req.file) {
+    if (req.body.notificationPreferences) {
+      try {
+        const prefs = typeof req.body.notificationPreferences === 'string' 
+          ? JSON.parse(req.body.notificationPreferences) 
+          : req.body.notificationPreferences;
+        user.notificationPreferences = {
+          ...user.notificationPreferences,
+          ...prefs
+        };
+      } catch (e) {
+        console.error("Error parsing notification preferences:", e);
+      }
+    }
+
+    // Handle profile photo upload or removal
+    if (req.body.removePhoto === "true") {
+      user.profilePhoto = "";
+    } else if (req.file) {
       user.profilePhoto = `/uploads/${req.file.filename}`;
     }
 
@@ -143,6 +162,7 @@ const updateProfile = async (req, res) => {
       jobTitle: user.jobTitle,
       bio: user.bio,
       profilePhoto: user.profilePhoto,
+      notificationPreferences: user.notificationPreferences,
     });
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -179,4 +199,48 @@ const changePassword = async (req, res) => {
   }
 };
 
-module.exports = { registerUser, loginUser, updateProfile, changePassword };
+// ================= GOOGLE LOGIN =================
+const googleLogin = async (req, res) => {
+  const { idToken } = req.body;
+  if (!idToken) return res.status(400).json({ message: "No ID token provided" });
+
+  try {
+    const ticket = await client.verifyIdToken({
+      idToken,
+      audience: process.env.GOOGLE_CLIENT_ID,
+    });
+    const { sub, email, name, picture } = ticket.getPayload();
+
+    let user = await User.findOne({ email });
+    if (!user) {
+      user = await User.create({
+        name,
+        email,
+        googleId: sub,
+        profilePhoto: picture,
+      });
+    } else if (!user.googleId) {
+      user.googleId = sub;
+      if (picture && !user.profilePhoto) user.profilePhoto = picture;
+      await user.save();
+    }
+
+    res.json({
+      _id: user._id,
+      name: user.name,
+      email: user.email,
+      phoneNumber: user.phoneNumber || "",
+      dateOfBirth: user.dateOfBirth,
+      location: user.location,
+      jobTitle: user.jobTitle,
+      bio: user.bio,
+      profilePhoto: user.profilePhoto,
+      token: generateToken(user._id),
+    });
+  } catch (error) {
+    console.error("Google Auth Error:", error);
+    res.status(400).json({ message: "Google authentication failed" });
+  }
+};
+
+module.exports = { registerUser, loginUser, updateProfile, changePassword, googleLogin };

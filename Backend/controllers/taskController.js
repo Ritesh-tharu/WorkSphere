@@ -1,21 +1,91 @@
 const Task = require("../models/Task");
 const User = require("../models/User");
 const Notification = require("../models/Notification");
+const Invitation = require("../models/Invitation");
+const { sendInvitationEmail } = require("../config/emailService");
+const crypto = require("crypto");
 const mongoose = require("mongoose");
+ 
+// Helper to resolve assignee from ID or Email
+const resolveAssignee = async (assignedTo, inviterId) => {
+  if (!assignedTo) return { assignedTo: null, pendingAssigneeEmail: null };
+
+  // Check if it's a valid MongoDB ID
+  if (mongoose.Types.ObjectId.isValid(assignedTo)) {
+    return { assignedTo: assignedTo, pendingAssigneeEmail: null };
+  }
+
+  // Treat as email - validate format first
+  const emailRegex = /^\w+([.-]?\w+)*@\w+([.-]?\w+)*(\.\w{2,3})+$/;
+  if (!emailRegex.test(assignedTo)) {
+    return { assignedTo: null, pendingAssigneeEmail: null };
+  }
+
+  const email = assignedTo.toLowerCase();
+  const user = await User.findOne({ email });
+  if (user) {
+    return { assignedTo: user._id, pendingAssigneeEmail: null };
+  }
+
+  // Handle Invitation for new user
+  try {
+    const existingInvite = await Invitation.findOne({ email, status: "pending" });
+    if (!existingInvite) {
+      const token = crypto.randomBytes(32).toString("hex");
+      const inviter = await User.findById(inviterId);
+      
+      await Invitation.create({
+        email,
+        invitedBy: inviterId,
+        token,
+        status: "pending",
+        expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+      });
+
+      // Async email sending (don't block task creation)
+      sendInvitationEmail(email, token, inviter?.name || "A team member").catch(err => 
+        console.error("Secondary invitation email failed:", err)
+      );
+    }
+  } catch (err) {
+    console.error("Failed to handle automated invitation:", err);
+  }
+
+  return { assignedTo: null, pendingAssigneeEmail: email };
+};
 
 // Get all tasks for user with filters
 exports.getTasks = async (req, res) => {
   try {
-    const userId = req.user.id;
-    const { status, project, assignedTo, priority, search, archived } =
+    const userId = req.user._id;
+    const { status, project, assignedTo, priority, search, archived, limit, dueDate } =
       req.query;
 
     let query = { user: userId, isArchived: archived === "true" };
 
-    if (status) query.status = status;
+    if (status) {
+      query.status = status.includes(",") ? { $in: status.split(",") } : status;
+    }
     if (project) query.project = project;
     if (assignedTo) query.assignedTo = assignedTo;
-    if (priority) query.priority = priority;
+    if (priority) {
+      query.priority = priority.includes(",") ? { $in: priority.split(",") } : priority;
+    }
+
+    if (dueDate) {
+      const now = new Date();
+      if (dueDate === "today") {
+        const endOfDay = new Date();
+        endOfDay.setHours(23, 59, 59, 999);
+        query.dueDate = { $lte: endOfDay, $gte: new Date(now.setHours(0,0,0,0)) };
+      } else if (dueDate === "this-week") {
+        const endOfWeek = new Date();
+        endOfWeek.setDate(endOfWeek.getDate() + 7);
+        query.dueDate = { $lte: endOfWeek, $gte: new Date(now.setHours(0,0,0,0)) };
+      } else if (dueDate === "overdue") {
+        query.dueDate = { $lt: new Date() };
+      }
+    }
     if (search) {
       query.$or = [
         { title: { $regex: search, $options: "i" } },
@@ -23,13 +93,19 @@ exports.getTasks = async (req, res) => {
       ];
     }
 
-    const tasks = await Task.find(query)
+    let tasksQuery = Task.find(query)
       .populate("assignedTo", "name email profilePhoto")
       .populate("user", "name email")
       .populate("project", "name color")
       .populate("comments.user", "name email profilePhoto")
       .populate("activity.user", "name email profilePhoto")
-      .sort({ position: 1, createdAt: -1 });
+      .sort({ createdAt: -1, position: 1 });
+
+    if (limit) {
+      tasksQuery = tasksQuery.limit(parseInt(limit));
+    }
+
+    const tasks = await tasksQuery;
 
     res.json(tasks);
   } catch (error) {
@@ -41,7 +117,7 @@ exports.getTasks = async (req, res) => {
 exports.getTaskById = async (req, res) => {
   try {
     const { id } = req.params;
-    const userId = req.user.id;
+    const userId = req.user._id;
 
     if (!mongoose.Types.ObjectId.isValid(id)) {
       return res.status(400).json({ message: "Invalid task ID" });
@@ -70,6 +146,7 @@ exports.getTaskById = async (req, res) => {
 // Create task
 exports.createTask = async (req, res) => {
   try {
+    const userId = req.user._id;
     const {
       title,
       description,
@@ -83,12 +160,14 @@ exports.createTask = async (req, res) => {
 
     // Get the highest position for the status column
     const lastTask = await Task.findOne({
-      user: req.user.id,
+      user: req.user._id,
       status: status || "todo",
       isArchived: false,
     }).sort({ position: -1 });
 
     const position = lastTask ? lastTask.position + 1 : 0;
+
+    const { assignedTo: resolvedId, pendingAssigneeEmail } = await resolveAssignee(assignedTo, req.user._id);
 
     const task = new Task({
       title,
@@ -97,13 +176,14 @@ exports.createTask = async (req, res) => {
       priority: priority || "Medium",
       dueDate,
       project,
-      assignedTo,
+      assignedTo: resolvedId,
+      pendingAssigneeEmail,
       labels: labels || [],
-      user: req.user.id,
+      user: req.user._id,
       position,
       activity: [
         {
-          user: req.user.id,
+          user: req.user._id,
           action: "created",
           details: "Task created",
           timestamp: new Date(),
@@ -115,7 +195,7 @@ exports.createTask = async (req, res) => {
 
     // Create notification
     await Notification.create({
-      user: req.user.id,
+      user: req.user._id,
       title: "New Task Created",
       message: `Task "${title}" has been created`,
       type: "task",
@@ -123,9 +203,9 @@ exports.createTask = async (req, res) => {
     });
 
     // If assigned to someone else, notify them
-    if (assignedTo && assignedTo !== req.user.id) {
+    if (resolvedId && resolvedId.toString() !== req.user._id.toString()) {
       await Notification.create({
-        user: assignedTo,
+        user: resolvedId,
         title: "Task Assigned",
         message: `You have been assigned to task: "${title}"`,
         type: "task",
@@ -149,11 +229,18 @@ exports.updateTask = async (req, res) => {
   try {
     const { id } = req.params;
     const updates = req.body;
-    const userId = req.user.id;
+    const userId = req.user._id;
 
     const task = await Task.findOne({ _id: id, user: userId });
     if (!task) {
       return res.status(404).json({ message: "Task not found" });
+    }
+
+    // Resolve assignment early to avoid CastErrors with emails
+    if (updates.assignedTo !== undefined) {
+      const { assignedTo: resolvedId, pendingAssigneeEmail } = await resolveAssignee(updates.assignedTo, userId);
+      updates.assignedTo = resolvedId;
+      updates.pendingAssigneeEmail = pendingAssigneeEmail;
     }
 
     // Track changes for activity log
@@ -194,19 +281,28 @@ exports.updateTask = async (req, res) => {
 
     // Add activity for assignment change
     if (
-      updates.assignedTo &&
-      updates.assignedTo !== task.assignedTo?.toString()
+      (updates.assignedTo !== undefined && updates.assignedTo !== task.assignedTo?.toString()) ||
+      (updates.pendingAssigneeEmail !== undefined && updates.pendingAssigneeEmail !== task.pendingAssigneeEmail)
     ) {
-      const assignedUser = await User.findById(updates.assignedTo);
+      let details = "Assigned to someone";
+      if (updates.assignedTo) {
+        const assignedUser = await User.findById(updates.assignedTo);
+        details = `Assigned to ${assignedUser?.name || "Member"}`;
+      } else if (updates.pendingAssigneeEmail) {
+        details = `Assigned to ${updates.pendingAssigneeEmail}`;
+      } else {
+        details = "Task unassigned";
+      }
+
       task.activity.push({
         user: userId,
         action: "assigned",
-        details: `Assigned to ${assignedUser?.name || "someone"}`,
+        details,
         timestamp: new Date(),
       });
 
       // Notify newly assigned user
-      if (updates.assignedTo !== userId) {
+      if (updates.assignedTo && updates.assignedTo.toString() !== userId) {
         await Notification.create({
           user: updates.assignedTo,
           title: "Task Assigned",
@@ -238,7 +334,7 @@ exports.updateTask = async (req, res) => {
 exports.updateTaskPositions = async (req, res) => {
   try {
     const { tasks } = req.body; // Array of { id, status, position }
-    const userId = req.user.id;
+    const userId = req.user._id;
 
     const updates = tasks.map(({ id, status, position }) => ({
       updateOne: {
@@ -259,7 +355,7 @@ exports.updateTaskPositions = async (req, res) => {
 exports.deleteTask = async (req, res) => {
   try {
     const { id } = req.params;
-    const userId = req.user.id;
+    const userId = req.user._id;
 
     const task = await Task.findOne({ _id: id, user: userId });
     if (!task) {
@@ -397,7 +493,7 @@ exports.toggleChecklistItem = async (req, res) => {
 // Get task stats
 exports.getTaskStats = async (req, res) => {
   try {
-    const userId = req.user.id;
+    const userId = req.user._id;
     const now = new Date();
 
     const stats = await Task.aggregate([
@@ -440,7 +536,7 @@ exports.getTaskStats = async (req, res) => {
     ]);
 
     const result = stats[0];
-    const statusMap = { todo: 0, doing: 0, completed: 0 };
+    const statusMap = {};
     const priorityMap = { Low: 0, Medium: 0, High: 0, Urgent: 0 };
 
     result.statusCounts.forEach((item) => {
@@ -453,14 +549,17 @@ exports.getTaskStats = async (req, res) => {
 
     const totalTasks = result.totalCount[0]?.count || 0;
     const completedTasks = statusMap.completed || 0;
+    const inProgressTasks = (statusMap.doing || 0) + (statusMap.doing === undefined ? Object.keys(statusMap).reduce((acc, k) => (k !== 'todo' && k !== 'completed' ? acc + statusMap[k] : acc), 0) : 0);
+    
     const completionRate =
       totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
 
     res.json({
       totalTasks,
-      completedTasks: statusMap.completed || 0,
-      inProgressTasks: statusMap.doing || 0,
+      completedTasks,
+      inProgressTasks,
       todoTasks: statusMap.todo || 0,
+      allStatuses: statusMap, // Send the full map for frontend flexibility
       overdueTasks: result.overdueCount[0]?.count || 0,
       completionRate,
       priorityCounts: priorityMap,

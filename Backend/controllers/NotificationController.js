@@ -82,3 +82,24 @@ exports.createNotification = async (
     console.error("Error creating notification:", error);
   }
 };
+// Delete notification
+exports.deleteNotification = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const notification = await Notification.findOne({
+      _id: id,
+      user: req.user.id,
+    });
+
+    if (!notification) {
+      return res.status(404).json({ message: "Notification not found" });
+    }
+
+    await Notification.deleteOne({ _id: id });
+
+    res.json({ message: "Notification deleted successfully" });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};

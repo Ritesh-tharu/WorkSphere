@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Eye, EyeOff, Lock, Mail, ChevronRight, Layout } from "lucide-react";
+import { GoogleLogin } from "@react-oauth/google";
 
 const Login = () => {
   const navigate = useNavigate();
@@ -16,6 +17,30 @@ const Login = () => {
   const [error, setError] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
+
+  const handleGoogleSuccess = async (credentialResponse) => {
+    setLoading(true);
+    setError("");
+    try {
+      const response = await fetch("http://localhost:5000/api/auth/google", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ idToken: credentialResponse.credential }),
+      });
+      const data = await response.json();
+      if (response.ok) {
+        localStorage.setItem("token", data.token);
+        localStorage.setItem("user", JSON.stringify(data));
+        navigate("/dashboard");
+      } else {
+        setError(data.message || "Google authentication failed.");
+      }
+    } catch (err) {
+      setError("Failed to synchronize with Google gateway.");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -55,7 +80,7 @@ const Login = () => {
               <Layout className="text-white" size={24} />
            </div>
            <div className="text-center">
-              <h1 className="text-2xl font-black tracking-tight text-slate-900 uppercase">Herald</h1>
+              <h1 className="text-2xl font-black tracking-tight text-slate-900 uppercase">WorkSphere</h1>
               <p className="text-[10px] font-bold tracking-[0.2em] text-slate-400 uppercase">Project Management</p>
            </div>
         </div>
@@ -68,6 +93,26 @@ const Login = () => {
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-5">
+            <div className="space-y-4">
+              <GoogleLogin
+                onSuccess={handleGoogleSuccess}
+                onError={() => setError("Google Login Failed")}
+                useOneTap
+                shape="pill"
+                theme="outline"
+                size="large"
+                width="360"
+              />
+              <div className="relative">
+                <div className="absolute inset-0 flex items-center">
+                  <div className="w-full border-t border-slate-100"></div>
+                </div>
+                <div className="relative flex justify-center text-[10px] uppercase font-bold tracking-widest">
+                  <span className="bg-white px-4 text-slate-400">Or use email</span>
+                </div>
+              </div>
+            </div>
+
             <div className="space-y-2">
                <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest px-1">Email</label>
                <div className="relative group">

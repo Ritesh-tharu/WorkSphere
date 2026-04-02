@@ -102,7 +102,6 @@ const taskSchema = new mongoose.Schema(
     },
     status: {
       type: String,
-      enum: ["todo", "doing", "completed"],
       default: "todo",
     },
     priority: {
@@ -132,6 +131,11 @@ const taskSchema = new mongoose.Schema(
     assignedTo: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
+    },
+    pendingAssigneeEmail: {
+      type: String,
+      trim: true,
+      lowercase: true,
     },
     project: {
       type: mongoose.Schema.Types.ObjectId,

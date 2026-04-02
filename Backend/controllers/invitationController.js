@@ -244,3 +244,44 @@ exports.getTeamMembers = async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 };
+// Cancel invitation
+exports.cancelInvite = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const userId = req.user.id;
+
+    const invitation = await Invitation.findOne({
+      _id: id,
+      invitedBy: userId
+    });
+
+    if (!invitation) {
+      return res
+        .status(404)
+        .json({ message: "Invitation not found or cannot be cancelled" });
+    }
+
+    await Invitation.deleteOne({ _id: id });
+
+    res.json({ message: "Invitation cancelled successfully" });
+  } catch (error) {
+    console.error("Error cancelling invitation:", error);
+    res.status(500).json({ message: error.message });
+  }
+};
+// Remove team member
+exports.removeMember = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const userId = req.user.id;
+
+    await User.findByIdAndUpdate(userId, {
+      $pull: { teamMembers: id },
+    });
+
+    res.json({ message: "Member removed from team successfully" });
+  } catch (error) {
+    console.error("Error removing member:", error);
+    res.status(500).json({ message: error.message });
+  }
+};

@@ -6,12 +6,14 @@ const {
   loginUser,
   updateProfile,
   changePassword,
+  googleLogin,
 } = require("../controllers/authController");
 const { protect } = require("../middleware/authMiddleware");
 const upload = require("../middleware/uploadMiddleware");
 
 router.post("/signup", registerUser);
 router.post("/login", loginUser);
+router.post("/google", googleLogin);
 router.put(
   "/update-profile",
   protect,

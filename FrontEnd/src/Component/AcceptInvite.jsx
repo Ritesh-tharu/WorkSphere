@@ -31,7 +31,7 @@ const AcceptInvite = () => {
               <Layout className="text-white" size={24} />
            </div>
            <div className="text-center">
-              <h1 className="text-xl font-black tracking-tight text-slate-900 uppercase">Herald</h1>
+              <h1 className="text-xl font-black tracking-tight text-slate-900 uppercase">WorkSphere</h1>
               <p className="text-[10px] font-bold tracking-[0.2em] text-slate-400 uppercase">Invitation Portal</p>
            </div>
         </div>

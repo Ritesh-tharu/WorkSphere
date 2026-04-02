@@ -1,6 +1,6 @@
 const mongoose = require('mongoose');
 const dotenv = require('dotenv');
-dotenv.config({ path: 'd:/Herald/Easy Project Management/Backend/.env' });
+dotenv.config({ path: 'd:/WorkSphere/Easy Project Management/Backend/.env' });
 
 async function fixDB() {
   try {
