@@ -58,6 +58,11 @@ const projectSchema = new mongoose.Schema(
         default: "Medium",
       },
     },
+    columns: [
+      { id: { type: String, default: "todo" }, name: { type: String, default: "To Do" }, position: { type: Number, default: 0 } },
+      { id: { type: String, default: "doing" }, name: { type: String, default: "Doing" }, position: { type: Number, default: 1 } },
+      { id: { type: String, default: "completed" }, name: { type: String, default: "Done" }, position: { type: Number, default: 2 } },
+    ],
   },
   { timestamps: true },
 );

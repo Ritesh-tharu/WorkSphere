@@ -179,7 +179,7 @@ const Login = () => {
         </div>
 
         <p className="text-[9px] font-bold text-slate-400 uppercase tracking-[0.3em] text-center">
-          Secured by Herald Enterprise Encryption
+          CopyRight Ritesh Chaudhary WORKSPHERE
         </p>
       </div>
     </div>

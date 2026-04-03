@@ -17,7 +17,10 @@ import {
   Tag,
   Paperclip,
   Trash2,
-  Folder
+  Folder,
+  History,
+  Activity as ActivityIcon,
+  Palette
 } from "lucide-react";
 import TaskAttachments from "./TaskAttachments";
 
@@ -38,7 +41,20 @@ const TABS = [
   { id: "details", label: "Details", Icon: Layers },
   { id: "checklist", label: "Checklist", Icon: CheckSquare },
   { id: "comments", label: "Comments", Icon: MessageSquare },
+  { id: "activity", label: "Activity", Icon: History },
+];
 
+const LABEL_COLORS = [
+  { name: "Emerald", color: "#4bce97" },
+  { name: "Yellow", color: "#f5cd47" },
+  { name: "Orange", color: "#fea362" },
+  { name: "Red", color: "#f87168" },
+  { name: "Purple", color: "#9f8fef" },
+  { name: "Blue", color: "#579dff" },
+  { name: "Sky", color: "#6cc3e0" },
+  { name: "Lime", color: "#94c748" },
+  { name: "Pink", color: "#e774bb" },
+  { name: "Slate", color: "#8590a2" },
 ];
 
 export default function TaskModal({ task, onClose, onUpdate, users = [], projects = [] }) {
@@ -50,8 +66,9 @@ export default function TaskModal({ task, onClose, onUpdate, users = [], project
   const [assigneeSearch, setAssigneeSearch] = useState("");
   const [showAssigneeDropdown, setShowAssigneeDropdown] = useState(false);
 
-  const token = localStorage.getItem("token");
-  const headers = { headers: { Authorization: `Bearer ${token}` } };
+  const getHeaders = () => ({
+    headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
+  });
   const base = "http://localhost:5000/api/tasks";
 
   const patch = (fields) => setEditedTask((prev) => ({ ...prev, ...fields }));
@@ -65,15 +82,24 @@ export default function TaskModal({ task, onClose, onUpdate, users = [], project
       const payload = {
         title: editedTask.title,
         description: editedTask.description,
-        status: editedTask.status,
-        priority: editedTask.priority,
+        status: editedTask.status || "todo",
+        priority: editedTask.priority || "Medium",
         dueDate: editedTask.dueDate,
         assignedTo: typeof editedTask.assignedTo === 'object' ? editedTask.assignedTo?._id : editedTask.assignedTo,
         project: typeof editedTask.project === 'object' ? editedTask.project?._id : editedTask.project,
-        labels: editedTask.labels,
+        labels: editedTask.labels || [],
       };
 
-      const { data } = await axios.put(`${base}/${task._id}`, payload, headers);
+      let res;
+      if (task?._id) {
+        // Update existing task
+        res = await axios.put(`${base}/${task._id}`, payload, getHeaders());
+      } else {
+        // Create new task
+        res = await axios.post(base, payload, getHeaders());
+      }
+
+      const { data } = res;
       if (onUpdate) onUpdate(data);
       setSaved(true);
       
@@ -84,8 +110,7 @@ export default function TaskModal({ task, onClose, onUpdate, users = [], project
       }, 800);
     } catch (err) {
       console.error("Save failed:", err);
-      // Fallback: if it's a 500, maybe it's still about the payload structure
-      alert("Save failed. Project or Assignee might be in an invalid state.");
+      alert(task?._id ? "Update failed." : "Creation failed.");
     } finally {
       setLoading(false);
     }
@@ -95,7 +120,7 @@ export default function TaskModal({ task, onClose, onUpdate, users = [], project
     if (!window.confirm("Are you sure you want to delete this task? This action cannot be undone.")) return;
     setLoading(true);
     try {
-      await axios.delete(`${base}/${task._id}`, headers);
+      await axios.delete(`${base}/${task._id}`, getHeaders());
       if (onUpdate) onUpdate();
       onClose();
     } catch (err) {
@@ -108,7 +133,7 @@ export default function TaskModal({ task, onClose, onUpdate, users = [], project
   const handleAddComment = async () => {
     if (!newComment.trim()) return;
     try {
-      const { data } = await axios.post(`${base}/${task._id}/comments`, { content: newComment }, headers);
+      const { data } = await axios.post(`${base}/${task._id}/comments`, { content: newComment }, getHeaders());
       patch({ comments: [...(editedTask.comments || []), data] });
       setNewComment("");
       if (onUpdate) onUpdate();
@@ -118,19 +143,24 @@ export default function TaskModal({ task, onClose, onUpdate, users = [], project
   const handleAddCheckItem = async () => {
     if (!newCheckItem.trim()) return;
     try {
-      const { data } = await axios.post(`${base}/${task._id}/checklist`, { text: newCheckItem }, headers);
+      const { data } = await axios.post(`${base}/${task._id}/checklist`, { text: newCheckItem }, getHeaders());
       patch({ checklist: [...(editedTask.checklist || []), data] });
       setNewCheckItem("");
       if (onUpdate) onUpdate();
     } catch (err) { console.error(err); }
   };
 
-  const handleToggle = async (itemId) => {
+  const handleArchive = async () => {
+    setLoading(true);
     try {
-      const { data } = await axios.put(`${base}/${task._id}/checklist/${itemId}/toggle`, {}, headers);
-      patch({ checklist: editedTask.checklist.map((i) => (i._id === itemId ? data : i)) });
+      await axios.put(`${base}/${task._id}/archive`, { archive: true }, getHeaders());
       if (onUpdate) onUpdate();
-    } catch (err) { console.error(err); }
+      onClose();
+    } catch (err) {
+      console.error("Archive failed:", err);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const checklist = editedTask.checklist || [];
@@ -150,7 +180,9 @@ export default function TaskModal({ task, onClose, onUpdate, users = [], project
         {/* Header Area */}
         <header className="px-8 py-5 border-b border-slate-100 flex items-center gap-6 shrink-0 bg-white">
           <div className="flex items-center gap-3 shrink-0">
-             <span className="text-[10px] font-bold bg-slate-50 px-2 py-1 rounded-xl text-slate-400 border border-slate-100 truncate max-w-[80px]">#{task._id.slice(-6).toUpperCase()}</span>
+             <span className="text-[10px] font-bold bg-slate-50 px-2 py-1 rounded-xl text-slate-400 border border-slate-100 truncate max-w-[80px]">
+                {task?._id ? `#${task._id.slice(-6).toUpperCase()}` : "NEW"}
+             </span>
              <div className={`text-[10px] font-bold px-2.5 py-1 rounded-xl border ${statusCfg.bg} ${statusCfg.color} border-current/10`}>
                 {statusCfg.label}
              </div>
@@ -286,10 +318,39 @@ export default function TaskModal({ task, onClose, onUpdate, users = [], project
               </div>
             )}
 
+            {activeTab === "activity" && (
+              <div className="max-w-3xl mx-auto space-y-8 px-4">
+                 <div className="relative pl-8 space-y-8 before:absolute before:left-[15px] before:top-2 before:bottom-2 before:w-[2px] before:bg-slate-100">
+                    {(editedTask.activityLog || task.activityLog || []).length > 0 ? (
+                      [...(editedTask.activityLog || task.activityLog || [])].reverse().map((log, i) => (
+                        <div key={i} className="relative">
+                           <div className="absolute -left-[23px] top-1 w-4 h-4 rounded-full bg-white border-2 border-slate-900 z-10 flex items-center justify-center">
+                              <History size={8} className="text-slate-900" />
+                           </div>
+                           <div className="space-y-1">
+                              <div className="flex items-center gap-2">
+                                 <span className="text-xs font-bold text-slate-900">{log.user?.name || "System"}</span>
+                                 <span className="text-xs text-slate-500 font-medium">{log.action}</span>
+                              </div>
+                              {log.details && <p className="text-[11px] text-slate-400 font-medium italic">"{log.details}"</p>}
+                              <time className="text-[9px] font-bold text-slate-300 uppercase block tracking-widest">{new Date(log.timestamp).toLocaleString()}</time>
+                           </div>
+                        </div>
+                      ))
+                    ) : (
+                      <div className="py-12 flex flex-col items-center justify-center text-center opacity-30">
+                        <ActivityIcon size={32} />
+                        <p className="text-[10px] font-black uppercase tracking-widest mt-3">No activity logged yet</p>
+                      </div>
+                    )}
+                 </div>
+              </div>
+            )}
+
             {activeTab === "comments" && (
               <div className="max-w-3xl mx-auto space-y-8">
                  <div className="space-y-4">
-                    {editedTask.comments?.map((c) => (
+                    {(editedTask.comments || []).map((c) => (
                     <div key={c._id} className="flex gap-4 p-5 bg-card border border-base rounded-2xl shadow-sm">
                         <div className="w-9 h-9 rounded-full bg-main flex items-center justify-center text-xs font-bold text-secondary shrink-0 border border-base">
                             {c.user?.name?.charAt(0) || "U"}
@@ -308,7 +369,7 @@ export default function TaskModal({ task, onClose, onUpdate, users = [], project
                  <div className="bg-card border border-base p-6 rounded-[2rem] shadow-sm space-y-4">
                     <textarea
                         className="w-full bg-main border border-base rounded-xl p-4 text-sm text-primary focus:ring-2 focus:ring-slate-900/5 focus:border-slate-900 transition-all outline-none min-h-[100px] resize-none"
-                        placeholder="ANy comments?"
+                        placeholder="Add a comment..."
                         value={newComment}
                         onChange={(e) => setNewComment(e.target.value)}
                     />
@@ -318,7 +379,7 @@ export default function TaskModal({ task, onClose, onUpdate, users = [], project
                             className="flex items-center gap-2 px-6 py-3 bg-slate-900 text-white rounded-xl font-bold text-xs uppercase tracking-widest shadow-md"
                         >
                             <Send size={14} />
-                            <span>Send</span>
+                            <span>Post</span>
                         </button>
                     </div>
                  </div>
@@ -344,7 +405,44 @@ export default function TaskModal({ task, onClose, onUpdate, users = [], project
                 </div>
              </div>
 
-             <div className="space-y-4">
+              <div className="space-y-4">
+                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest px-1 flex items-center gap-2">
+                  <Tag size={12} className="text-rose-500" />
+                  Labels
+                </p>
+                <div className="flex flex-wrap gap-1.5 px-1">
+                   {(editedTask.labels || []).map((label, idx) => (
+                      <div 
+                        key={idx} 
+                        className="h-8 px-3 rounded-lg flex items-center gap-2 border border-black/5 shadow-sm text-[10px] font-black text-white"
+                        style={{ backgroundColor: label.color }}
+                      >
+                         <span>{label.text || ""}</span>
+                         <button onClick={() => patch({ labels: editedTask.labels.filter((_, i) => i !== idx) })} className="hover:scale-110"><X size={10} /></button>
+                      </div>
+                   ))}
+                   <div className="relative group/label">
+                      <button className="h-8 w-8 rounded-lg bg-slate-100 text-slate-400 flex items-center justify-center hover:bg-slate-200 transition-all">
+                         <Plus size={14} />
+                      </button>
+                      <div className="absolute top-full right-0 mt-2 p-3 bg-white border border-base rounded-xl shadow-2xl z-[70] hidden group-hover/label:grid grid-cols-5 gap-2 w-48 animate-in fade-in slide-in-from-top-1 duration-200">
+                         {LABEL_COLORS.map((c) => (
+                            <button 
+                              key={c.name}
+                              className="w-6 h-6 rounded-md border border-black/5 hover:scale-110 transition-transform"
+                              style={{ backgroundColor: c.color }}
+                              onClick={() => {
+                                 const labelText = prompt("Label text (optional):") || "";
+                                 patch({ labels: [...(editedTask.labels || []), { color: c.color, text: labelText }] });
+                              }}
+                            />
+                         ))}
+                      </div>
+                   </div>
+                </div>
+              </div>
+
+              <div className="space-y-4">
                 <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest px-1">Priority Level</p>
                 <div className="grid grid-cols-2 gap-2">
                     {Object.entries(PRIORITY_CONFIG).map(([p, cfg]) => (
@@ -483,14 +581,24 @@ export default function TaskModal({ task, onClose, onUpdate, users = [], project
 
         {/* Action Footer */}
         <footer className="px-8 py-5 border-t border-base flex justify-between items-center shrink-0 bg-card">
-          <button 
-            className="flex items-center gap-2 px-4 py-2.5 text-rose-500 hover:text-rose-700 hover:bg-rose-50 rounded-xl font-bold text-xs uppercase transition-all" 
-            onClick={handleDelete}
-            disabled={loading}
-          >
-            <Trash2 size={14} />
-            <span>Delete Task</span>
-          </button>
+          <div className="flex gap-2">
+            <button 
+              className={`flex items-center gap-2 px-4 py-2.5 text-slate-500 hover:text-indigo-600 hover:bg-indigo-50 rounded-xl font-bold text-xs uppercase transition-all ${!task?._id ? 'hidden' : ''}`} 
+              onClick={handleArchive}
+              disabled={loading}
+            >
+              <History size={14} />
+              <span>Archive</span>
+            </button>
+            <button 
+              className={`flex items-center gap-2 px-4 py-2.5 text-rose-500 hover:text-rose-700 hover:bg-rose-50 rounded-xl font-bold text-xs uppercase transition-all ${!task?._id ? 'opacity-30 cursor-not-allowed grayscale' : ''}`} 
+              onClick={handleDelete}
+              disabled={loading || !task?._id}
+            >
+              <Trash2 size={14} />
+              <span>Delete</span>
+            </button>
+          </div>
 
           <div className="flex gap-3">
             <button className="px-6 py-2.5 text-slate-400 hover:text-slate-900 font-bold text-xs uppercase transition-all" onClick={onClose}>
@@ -499,10 +607,10 @@ export default function TaskModal({ task, onClose, onUpdate, users = [], project
             <button
                 className={`px-8 py-2.5 rounded-xl font-bold text-xs uppercase tracking-widest transition-all shadow-md flex items-center gap-2 group active:scale-95 ${saved ? 'bg-emerald-500 text-white' : 'bg-slate-900 hover:bg-slate-800 text-white'}`}
                 onClick={handleSave}
-                disabled={loading || saved}
+                disabled={loading || saved || !editedTask.title?.trim()}
             >
                 {saved ? <CheckCircle2 size={14} /> : <Save size={14} />}
-                {loading ? "Syncingâ€¦" : saved ? "Synced!" : "Save changes"}
+                {loading ? (task?._id ? "Syncing..." : "Creating...") : saved ? "Synced!" : (task?._id ? "Save changes" : "Create Task")}
             </button>
           </div>
         </footer>

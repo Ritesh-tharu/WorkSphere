@@ -12,15 +12,19 @@ const {
   addChecklistItem,
   toggleChecklistItem,
   getTaskStats,
+  getRecentTasks,
+  getTags,
 } = require("../controllers/taskController");
 const { protect } = require("../middleware/authMiddleware");
 
 // All routes require authentication
 router.use(protect);
 
-// Task statistics
+// Task statistics and activity
 router.get("/stats", getTaskStats);
+router.get("/recent", getRecentTasks);
 router.get("/search", getTasks);
+router.get("/tags", getTags);
 
 // Bulk update positions (for drag and drop)
 router.post("/positions", updateTaskPositions);

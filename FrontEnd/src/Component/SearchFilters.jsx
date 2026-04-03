@@ -23,7 +23,7 @@ const SearchFilters = ({ onSearchResults, initialFilters = {} }) => {
   const [filters, setFilters] = useState({
     status: [],
     priority: [],
-    project: "",
+    project: initialFilters.project || "",
     assignedTo: "",
     dueDate: "",
     tags: [],
@@ -56,6 +56,12 @@ const SearchFilters = ({ onSearchResults, initialFilters = {} }) => {
     fetchUsers();
     fetchTags();
   }, []);
+
+  useEffect(() => {
+    if (initialFilters.project && filters.project !== initialFilters.project) {
+        setFilters(prev => ({ ...prev, project: initialFilters.project }));
+    }
+  }, [initialFilters.project]);
 
   useEffect(() => {
     const delayDebounce = setTimeout(() => performSearch(), 500);

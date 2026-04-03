@@ -4,6 +4,7 @@ const cors = require("cors");
 const path = require("path");
 const connectDB = require("./config/db");
 const fs = require("fs");
+const { initReminderJob } = require("./utils/reminderJob");
 
 // Load Config
 dotenv.config();
@@ -60,6 +61,9 @@ app.use("/api/uploads", require("./routes/uploadRoutes"));
 // Report Routes
 app.use("/api/reports", require("./routes/reportRoutes"));
 
+// Note Routes
+app.use("/api/notes", require("./routes/noteRoutes"));
+
 // Health check
 app.get("/api/health", (req, res) => {
   res.json({
@@ -95,6 +99,9 @@ app.use((err, req, res, next) => {
     error: process.env.NODE_ENV === "development" ? err.message : undefined,
   });
 });
+
+// Initialize and start the background reminder job
+initReminderJob();
 
 // Start Server
 const PORT = process.env.PORT || 5000;

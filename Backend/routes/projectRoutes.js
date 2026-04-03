@@ -8,6 +8,7 @@ const {
   deleteProject,
   addTeamMember,
   getProjectTimeline,
+  updateProjectColumns,
 } = require("../controllers/projectController");
 const { protect } = require("../middleware/authMiddleware");
 
@@ -22,6 +23,7 @@ router
   .delete(deleteProject);
 
 router.post("/:id/team", addTeamMember);
+router.put("/:id/columns", updateProjectColumns);
 router.get("/:id/timeline", getProjectTimeline);
 
 module.exports = router;

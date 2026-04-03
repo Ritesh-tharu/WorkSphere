@@ -265,3 +265,28 @@ exports.getProjectTimeline = async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 };
+
+// Update project columns
+exports.updateProjectColumns = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { columns } = req.body;
+    const userId = req.user.id;
+
+    const project = await Project.findOne({
+      _id: id,
+      $or: [{ owner: userId }, { teamMembers: userId }],
+    });
+
+    if (!project) {
+      return res.status(404).json({ message: "Project not found" });
+    }
+
+    project.columns = columns;
+    await project.save();
+
+    res.json(project.columns);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};

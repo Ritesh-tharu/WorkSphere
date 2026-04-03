@@ -169,7 +169,6 @@ const updateProfile = async (req, res) => {
   }
 };
 
-// ================= CHANGE PASSWORD =================
 const changePassword = async (req, res) => {
   try {
     const userId = req.user.id;

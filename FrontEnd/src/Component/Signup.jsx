@@ -11,7 +11,6 @@ import {
   Layout, 
   CheckCircle2, 
   AlertCircle,
-  Github,
   Globe
 } from "lucide-react";
 import { GoogleLogin } from "@react-oauth/google";
@@ -245,26 +244,17 @@ const Signup = () => {
                 text="signup_with"
                 width="360"
               />
-              
-              <div className="flex gap-3">
-                <button 
-                  type="button" 
-                  onClick={() => handleSocialLogin("GitHub")}
-                  disabled={loading}
-                  className="flex-1 flex items-center justify-center gap-2 py-2.5 px-4 bg-white border border-slate-200 rounded-xl text-sm font-semibold text-slate-700 hover:bg-slate-50 hover:border-slate-300 transition-all active:scale-[0.98] disabled:opacity-50"
-                >
-                  <Github size={18} className="text-slate-900" />
-                  <span>GitHub</span>
-                </button>
-              </div>
             </div>
 
             <div className="relative">
               <div className="absolute inset-0 flex items-center">
                 <div className="w-full border-t border-slate-100"></div>
               </div>
-              <div className="relative flex justify-center text-[10px] uppercase font-bold tracking-widest">
-                <span className="bg-white px-4 text-slate-400">Or continue with email</span>
+              <div className="relative flex justify-center text-[12px] uppercase font-bold tracking-widest">
+                <span className="bg-white px-4 text-slate-400">Or</span>
+              </div>
+              <div className="relative flex justify-center text-[20px] uppercase font-bold tracking-widest">
+                <span className="bg-white px-4 text-slate-40">continue with email</span>
               </div>
             </div>
 
@@ -375,7 +365,7 @@ const Signup = () => {
                       name="agreeTerms"
                       checked={formData.agreeTerms}
                       onChange={handleChange}
-                      className="peer h-4 w-4 rounded-md border-slate-200 bg-slate-50 text-slate-900 focus:ring-slate-900/10 cursor-pointer appearance-none checked:bg-slate-900 checked:border-slate-900 transition-all"
+                      className="peer h-4 w-4 rounded-md border-slate-200 bg-slate-50 text-slate-900 focus:ring-slate-90/10 cursor-pointer appearance-none checked:bg-slate-900 checked:border-slate-900 transition-all"
                     />
                     <CheckCircle2 className="absolute text-white hidden peer-checked:block pointer-events-none" size={12} />
                   </div>
@@ -400,7 +390,7 @@ const Signup = () => {
                 {loading ? (
                   <div className="w-5 h-5 border-2 border-white/20 border-t-white rounded-full animate-spin" />
                 ) : (
-                  <>Create Workspace <ChevronRight size={16} className="group-hover/btn:translate-x-1 transition-transform" /></>
+                  <>Create Workspace Account <ChevronRight size={16} className="group-hover/btn:translate-x-1 transition-transform" /></>
                 )}
               </button>
             </form>
@@ -413,8 +403,8 @@ const Signup = () => {
           </div>
         </div>
 
-        <p className="text-[9px] font-black text-slate-400 uppercase tracking-[0.4em] text-center opacity-50">
-          WorkSphere Enterprise Platform v4.2.0
+        <p className="text-[10px] font-black text-slate-10 uppercase tracking-[0.4em] text-center opacity-50">
+          WorkSphere
         </p>
       </div>
     </div>

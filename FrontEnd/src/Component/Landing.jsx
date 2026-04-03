@@ -100,12 +100,6 @@ const Landing = () => {
                 Sign up - it's free!
               </button>
               
-              <button type="button" className="flex items-center gap-2 px-6 py-4 text-slate-600 hover:text-slate-900 font-bold transition-all group">
-                <div className="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center group-hover:bg-slate-200 transition-colors">
-                  <Play fill="currentColor" size={14} className="ml-1" />
-                </div>
-                <span>Watch video</span>
-              </button>
             </form>
 
             <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest pt-4">

@@ -58,7 +58,7 @@ const resolveAssignee = async (assignedTo, inviterId) => {
 exports.getTasks = async (req, res) => {
   try {
     const userId = req.user._id;
-    const { status, project, assignedTo, priority, search, archived, limit, dueDate } =
+    const { status, project, assignedTo, priority, search, archived, limit, dueDate, tags } =
       req.query;
 
     let query = { user: userId, isArchived: archived === "true" };
@@ -66,7 +66,19 @@ exports.getTasks = async (req, res) => {
     if (status) {
       query.status = status.includes(",") ? { $in: status.split(",") } : status;
     }
-    if (project) query.project = project;
+    
+    // Strict Project Filtering: 
+    if (project && project !== "all") {
+      if (project === "null" || project === "undefined") {
+        query.project = null; // Filter for "Global" tasks specifically
+      } else if (mongoose.Types.ObjectId.isValid(project)) {
+        query.project = new mongoose.Types.ObjectId(project);
+      }
+    } else if (project !== "all") {
+      // Default to null (isolation) if no project is specified
+      // This prevents leaking tasks from all projects into the global workspace or board transitions
+      query.project = null;
+    }
     if (assignedTo) query.assignedTo = assignedTo;
     if (priority) {
       query.priority = priority.includes(",") ? { $in: priority.split(",") } : priority;
@@ -86,6 +98,10 @@ exports.getTasks = async (req, res) => {
         query.dueDate = { $lt: new Date() };
       }
     }
+    if (tags) {
+      query["labels.text"] = { $in: tags.split(",") };
+    }
+
     if (search) {
       query.$or = [
         { title: { $regex: search, $options: "i" } },
@@ -161,6 +177,7 @@ exports.createTask = async (req, res) => {
     // Get the highest position for the status column
     const lastTask = await Task.findOne({
       user: req.user._id,
+      project: project || null, // Scope to project
       status: status || "todo",
       isArchived: false,
     }).sort({ position: -1 });
@@ -496,12 +513,24 @@ exports.getTaskStats = async (req, res) => {
     const userId = req.user._id;
     const now = new Date();
 
+    const matchQuery = {
+      user: new mongoose.Types.ObjectId(userId),
+      isArchived: false,
+    };
+
+    // Apply project filter to stats if provided
+    const { project } = req.query;
+    if (project) {
+      if (project === "null" || project === "undefined") {
+        matchQuery.project = null;
+      } else if (mongoose.Types.ObjectId.isValid(project)) {
+        matchQuery.project = new mongoose.Types.ObjectId(project);
+      }
+    }
+
     const stats = await Task.aggregate([
       {
-        $match: {
-          user: new mongoose.Types.ObjectId(userId),
-          isArchived: false,
-        },
+        $match: matchQuery,
       },
       {
         $facet: {
@@ -559,11 +588,65 @@ exports.getTaskStats = async (req, res) => {
       completedTasks,
       inProgressTasks,
       todoTasks: statusMap.todo || 0,
-      allStatuses: statusMap, // Send the full map for frontend flexibility
+      allStatuses: statusMap,
       overdueTasks: result.overdueCount[0]?.count || 0,
       completionRate,
       priorityCounts: priorityMap,
+      // Dashboard specific aliases
+      totalActiveTasks: totalTasks - completedTasks,
+      totalCompletedTasks: completedTasks,
+      totalCompletionRate: completionRate
     });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+// Get recent tasks for dashboard
+exports.getRecentTasks = async (req, res) => {
+  try {
+    const userId = req.user._id;
+    const tasks = await Task.find({ user: userId, isArchived: false })
+      .sort({ createdAt: -1 })
+      .limit(5)
+      .populate("project", "name color");
+    res.json(tasks);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+// Get recent activity (sorted by activity timestamp)
+exports.getRecentActivity = async (req, res) => {
+  try {
+    const userId = req.user._id;
+    const tasks = await Task.find({ user: userId })
+      .sort({ "activity.timestamp": -1 })
+      .limit(10);
+
+    const activities = [];
+    tasks.forEach((task) => {
+      task.activity.forEach((act) => {
+        activities.push({
+          ...act.toObject(),
+          taskTitle: task.title,
+          taskId: task._id,
+        });
+      });
+    });
+
+    res.json(activities.sort((a, b) => b.timestamp - a.timestamp).slice(0, 10));
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+// Get unique tags/labels for user
+exports.getTags = async (req, res) => {
+  try {
+    const userId = req.user._id;
+    const tags = await Task.distinct("labels.text", { user: userId });
+    res.json(tags);
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
