@@ -4,29 +4,27 @@ import {
   Plus, 
   MoreHorizontal, 
   Users, 
-  Clock, 
   Layout, 
   CheckCircle2,
   X,
-  Lock,
   Edit2,
   User,
-  Monitor,
-  Target,
-  Palette,
   Settings,
   ChevronDown,
-  Info,
-  Zap,
-  LayoutGrid
+  LayoutGrid,
+  Pencil
 } from "lucide-react";
+import { 
+  ViewColumnsIcon,
+} from "@heroicons/react/24/outline";
+import { CheckCircleIcon as CheckCircleIconSolidInner } from "@heroicons/react/24/solid";
 import TaskBoard from "./TaskBoard";
 
 /**
  * ProjectManager - High Fidelity Workspace Management
  * Switches between the Grid of Boards and the active Kanban Board.
  */
-const ProjectManager = ({ initialSelectedId }) => {
+const ProjectManager = ({ initialSelectedId, globalSearch }) => {
   const [projects, setProjects] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showCreateModal, setShowCreateModal] = useState(false);
@@ -39,7 +37,6 @@ const ProjectManager = ({ initialSelectedId }) => {
     name: "",
     description: "",
     color: "#6366f1",
-    bgImage: "", // For Image backgrounds
     visibility: "Workspace"
   });
 
@@ -47,10 +44,6 @@ const ProjectManager = ({ initialSelectedId }) => {
   const headers = { headers: { Authorization: `Bearer ${token}` } };
 
   const THEMES = [
-    { type: 'image', name: "Mountains", url: "https://images.unsplash.com/photo-1483728642387-6c3bdd6c93e5?q=80&w=2076", color: "#4f46e5" },
-    { type: 'image', name: "Valley", url: "https://images.unsplash.com/photo-1506744038136-46273834b3fb?q=80&w=2070", color: "#059669" },
-    { type: 'image', name: "Snow", url: "https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?q=80&w=2070", color: "#0891b2" },
-    { type: 'image', name: "Lake", url: "https://images.unsplash.com/photo-1501785888041-af3ef285b470?q=80&w=2070", color: "#d97706" },
     { type: 'color', name: "Slate", color: "#475569" },
     { type: 'color', name: "Indigo", color: "#6366f1" },
     { type: 'color', name: "Purple", color: "#a855f7" },
@@ -84,7 +77,7 @@ const ProjectManager = ({ initialSelectedId }) => {
     try {
       const submission = { 
         ...newProject, 
-        color: newProject.bgImage ? newProject.bgImage : newProject.color 
+        color: newProject.color 
       };
 
       if (editingProject) {
@@ -121,7 +114,6 @@ const ProjectManager = ({ initialSelectedId }) => {
       name: project.name,
       description: project.description || "",
       color: project.color?.startsWith('#') ? project.color : '#6366f1',
-      bgImage: project.color?.startsWith('http') ? project.color : "",
       visibility: project.visibility || "Workspace"
     });
     setShowCreateModal(true);
@@ -131,16 +123,21 @@ const ProjectManager = ({ initialSelectedId }) => {
   const closeModal = () => {
     setShowCreateModal(false);
     setEditingProject(null);
-    setNewProject({ name: "", description: "", color: "#6366f1", bgImage: "", visibility: "Workspace" });
+    setNewProject({ name: "", description: "", color: "#6366f1", visibility: "Workspace" });
   };
+
+  const filteredProjects = projects.filter(project => 
+    project.name.toLowerCase().includes((globalSearch || "").toLowerCase())
+  );
 
   if (activeBoardId) {
     return (
-      <div className="flex-1 h-full animate-in fade-in duration-500 overflow-hidden">
+      <div className="h-full w-full bg-main overflow-hidden flex flex-col">
         <TaskBoard 
           key={activeBoardId} 
           selectedProjectId={activeBoardId} 
           onBack={() => setActiveBoardId(null)} 
+          globalSearch={globalSearch}
         />
       </div>
     );
@@ -166,12 +163,12 @@ const ProjectManager = ({ initialSelectedId }) => {
               <div className="flex items-center gap-4">
                  <h1 className="text-4xl font-black text-primary tracking-tighter">Workspace</h1>
                  <button className="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-all text-secondary hover:text-primary border border-base">
-                    <Edit2 size={18} />
+                    <Pencil className="w-5 h-5" />
                  </button>
               </div>
-              <div className="flex items-center gap-6 text-sm font-bold text-secondary uppercase tracking-widest opacity-60">
-                 <span className="flex items-center gap-2"><LayoutGrid size={14} /> {projects.length} boards</span>
-              </div>
+               <div className="flex items-center gap-6 text-sm font-bold text-secondary uppercase tracking-widest opacity-60">
+                  <span className="flex items-center gap-2"><LayoutGrid className="w-4 h-4" /> {filteredProjects.length} {filteredProjects.length === 1 ? 'board' : 'boards'}</span>
+               </div>
            </div>
         </div>
       </div>
@@ -179,7 +176,7 @@ const ProjectManager = ({ initialSelectedId }) => {
       {/* SUB NAVIGATION (TRELLO STYLE) */}
       <div className="flex items-center gap-2 mb-10 border-b border-base pb-1 overflow-x-auto no-scrollbar">
          {[
-           { id: 'boards', label: 'Boards', Icon: Layout },
+           { id: 'boards', label: 'Boards', Icon: ViewColumnsIcon },
            { id: 'members', label: 'Members', Icon: Users },
            { id: 'settings', label: 'Settings', Icon: Settings },
          ].map(tab => (
@@ -188,7 +185,7 @@ const ProjectManager = ({ initialSelectedId }) => {
              onClick={() => setActiveSubTab(tab.id)}
              className={`px-6 py-3 rounded-t-xl text-xs font-black uppercase tracking-[0.2em] transition-all flex items-center gap-3 border-b-2 ${activeSubTab === tab.id ? 'border-indigo-600 text-indigo-600' : 'border-transparent text-secondary hover:text-primary hover:bg-slate-50 dark:hover:bg-slate-800'}`}
            >
-             <tab.Icon size={14} />
+             <tab.Icon className="w-4 h-4" />
              {tab.label}
            </button>
          ))}
@@ -196,13 +193,29 @@ const ProjectManager = ({ initialSelectedId }) => {
 
       {activeSubTab === 'boards' && (
         <div className="space-y-12">
-          <div className="flex items-center gap-4 text-primary">
-             <User size={22} className="text-indigo-500" />
-             <h2 className="text-xl font-black tracking-tighter uppercase text-[12px] tracking-[0.25em]">Your boards</h2>
+          <div className="flex items-center justify-between">
+             <div className="flex items-center gap-4 text-primary">
+                <User className="w-6 h-6 text-indigo-500" />
+                <h2 className="text-xl font-black tracking-tighter uppercase text-[12px] tracking-[0.25em]">Your boards</h2>
+             </div>
+             {globalSearch && (
+               <div className="flex items-center gap-2 px-3 py-1 bg-indigo-50 dark:bg-indigo-900/30 border border-indigo-100 dark:border-indigo-800 rounded-lg animate-in slide-in-from-right-4">
+                 <span className="text-[10px] font-black text-indigo-500 uppercase tracking-widest">Filtered by: "{globalSearch}"</span>
+                 <button onClick={() => {
+                   const searchInput = document.getElementById('global-search-input');
+                   if (searchInput) {
+                     // This is a bit hacky but works for a quick 'clear' trigger
+                     const nativeInputValueSetter = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, "value").set;
+                     nativeInputValueSetter.call(searchInput, "");
+                     searchInput.dispatchEvent(new Event('input', { bubbles: true }));
+                   }
+                 }} className="hover:text-indigo-600 transition-colors"><X className="w-3 h-3" /></button>
+               </div>
+             )}
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
-             {projects.map((p) => (
+             {filteredProjects.map((p) => (
                <div 
                  key={p._id} 
                  className="group cursor-pointer space-y-4 relative"
@@ -224,7 +237,7 @@ const ProjectManager = ({ initialSelectedId }) => {
                         onClick={(e) => { e.stopPropagation(); setActiveMenuId(activeMenuId === p._id ? null : p._id); }}
                         className={`p-1.5 rounded-lg text-secondary hover:bg-slate-100 transition-all ${activeMenuId === p._id ? 'bg-slate-100 opacity-100' : 'opacity-0 group-hover:opacity-100'}`}
                       >
-                        <MoreHorizontal size={14} />
+                        <MoreHorizontal className="w-4 h-4" />
                       </button>
 
                       {/* CONTEXT MENU */}
@@ -232,8 +245,8 @@ const ProjectManager = ({ initialSelectedId }) => {
                         <>
                           <div className="fixed inset-0 z-40" onClick={() => setActiveMenuId(null)} />
                           <div className="absolute right-0 top-10 w-48 bg-white border border-base rounded-xl shadow-2xl z-50 py-2 animate-in zoom-in-95 duration-200">
-                             <button onClick={() => openEditModal(p)} className="w-full text-left px-4 py-2 text-[11px] font-black text-slate-700 hover:bg-slate-50 uppercase tracking-widest flex items-center gap-3"><Edit2 size={12} /> Edit Board</button>
-                             <button onClick={() => handleDeleteProject(p._id)} className="w-full text-left px-4 py-2 text-[11px] font-black text-rose-500 hover:bg-rose-50 uppercase tracking-widest flex items-center gap-3 border-t border-base mt-2 pt-4"><X size={12} /> Delete Board</button>
+                             <button onClick={() => openEditModal(p)} className="w-full text-left px-4 py-2 text-[11px] font-black text-slate-700 hover:bg-slate-50 uppercase tracking-widest flex items-center gap-3"><Pencil className="w-3.5 h-3.5" /> Edit Board</button>
+                             <button onClick={() => handleDeleteProject(p._id)} className="w-full text-left px-4 py-2 text-[11px] font-black text-rose-500 hover:bg-rose-50 uppercase tracking-widest flex items-center gap-3 border-t border-base mt-2 pt-4"><X className="w-3.5 h-3.5" /> Delete Board</button>
                           </div>
                         </>
                       )}
@@ -245,7 +258,7 @@ const ProjectManager = ({ initialSelectedId }) => {
                onClick={() => setShowCreateModal(true)}
                className="h-36 bg-slate-100/50 dark:bg-slate-900 border-2 border-dashed border-slate-200 dark:border-slate-800 hover:border-indigo-500/50 hover:bg-slate-50 dark:hover:bg-slate-800 rounded-2xl flex flex-col items-center justify-center gap-3 text-secondary hover:text-indigo-600 transition-all group shadow-sm"
              >
-               <Plus size={24} className="group-hover:rotate-90 transition-transform duration-300" />
+               <Plus className="w-8 h-8 group-hover:rotate-90 transition-transform duration-300" />
                <span className="text-[14px] font-black tracking-tight">Create new board</span>
              </button>
           </div>
@@ -254,7 +267,7 @@ const ProjectManager = ({ initialSelectedId }) => {
 
       {activeSubTab === 'members' && (
         <div className="flex flex-col items-center justify-center py-20 text-center opacity-40">
-           <Users size={64} className="mb-6" />
+           <Users className="w-16 h-16 mb-6" />
            <h3 className="text-xl font-black uppercase tracking-[0.2em] mb-2">Members</h3>
            <p className="text-sm font-bold">Manage your workspace collaborators and permissions.</p>
         </div>
@@ -262,7 +275,7 @@ const ProjectManager = ({ initialSelectedId }) => {
 
       {activeSubTab === 'settings' && (
         <div className="flex flex-col items-center justify-center py-20 text-center opacity-40">
-           <Settings size={64} className="mb-6" />
+           <Settings className="w-16 h-16 mb-6" />
            <h3 className="text-xl font-black uppercase tracking-[0.2em] mb-2">Workspace Settings</h3>
            <p className="text-sm font-bold">Configure workspace identity, visibility and security tags.</p>
         </div>
@@ -277,13 +290,12 @@ const ProjectManager = ({ initialSelectedId }) => {
               <div 
                 className="h-44 p-6 relative flex flex-col items-start bg-cover bg-center transition-all duration-700"
                 style={{ 
-                  backgroundColor: newProject.bgImage ? null : newProject.color,
-                  backgroundImage: newProject.bgImage ? `url(${newProject.bgImage})` : 'none'
+                  backgroundColor: newProject.color,
                 }}
               >
                   <div className="absolute inset-0 bg-black/10" />
                   <div className="relative z-10 w-full flex justify-end">
-                    <button onClick={closeModal} className="p-1 hover:bg-white/20 rounded text-white group"><X size={16} className="group-hover:rotate-90 transition-transform" /></button>
+                    <button onClick={closeModal} className="p-1 hover:bg-white/20 rounded text-white group"><X className="w-5 h-5 group-hover:rotate-90 transition-transform" /></button>
                   </div>
                   <div className="relative z-10 mt-auto bg-white/20 backdrop-blur-lg rounded px-3 py-1.5 border border-white/20 shadow-lg">
                     <div className="w-16 h-1.5 bg-white rounded-full mb-1" />
@@ -299,21 +311,17 @@ const ProjectManager = ({ initialSelectedId }) => {
                          <button 
                            key={i}
                            type="button"
-                           onClick={() => {
-                             if (t.type === 'image') {
-                               setNewProject({...newProject, bgImage: t.url, color: t.color});
-                             } else {
-                               setNewProject({...newProject, bgImage: "", color: t.color});
-                             }
-                           }}
-                           className={`h-8 rounded-md transition-all relative overflow-hidden bg-center bg-cover ${ (newProject.bgImage === t.url && t.type === 'image') || (!newProject.bgImage && newProject.color === t.color && t.type === 'color') ? 'ring-2 ring-indigo-500 scale-105 z-10 shadow-lg' : 'hover:scale-105 opacity-80 hover:opacity-100' }`}
+                            onClick={() => {
+                               setNewProject({...newProject, color: t.color});
+                            }}
+                            className={`h-8 rounded-md transition-all relative overflow-hidden bg-center bg-cover ${ newProject.color === t.color ? 'ring-2 ring-indigo-500 scale-105 z-10 shadow-lg' : 'hover:scale-105 opacity-80 hover:opacity-100' }`}
                            style={{ 
                              backgroundColor: t.color,
                              backgroundImage: t.type === 'image' ? `url(${t.url})` : 'none'
                            }}
                          >
-                           { (newProject.bgImage === t.url && t.type === 'image') || (!newProject.bgImage && newProject.color === t.color && t.type === 'color') && (
-                             <div className="absolute inset-0 flex items-center justify-center bg-black/10"><CheckCircle2 size={12} className="text-white" /></div>
+                           { newProject.color === t.color && (
+                             <div className="absolute inset-0 flex items-center justify-center bg-black/10"><CheckCircleIconSolidInner className="w-4 h-4 text-white" /></div>
                            )}
                          </button>
                        ))}
@@ -322,7 +330,7 @@ const ProjectManager = ({ initialSelectedId }) => {
 
                 <form onSubmit={handleSaveProject} className="space-y-5">
                    <div>
-                      <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-2 block">Board title <span className="text-rose-500">*</span></label>
+                      <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-2 block">Project Title <span className="text-rose-500">*</span></label>
                       <input 
                         autoFocus
                         className="w-full bg-[#22272b] border border-[#ffffff15] focus:border-indigo-500 rounded px-3 py-2.5 text-sm font-bold text-white outline-none transition-all placeholder:text-slate-500"
@@ -337,10 +345,10 @@ const ProjectManager = ({ initialSelectedId }) => {
                       <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-2 block">Visibility</label>
                       <button type="button" className="w-full flex items-center justify-between bg-[#22272b] border border-[#ffffff15] hover:bg-[#2c333a] rounded px-3 py-2.5 text-xs font-bold text-white transition-all text-left">
                         <span className="flex items-center gap-2 capitalize">
-                           <Layout size={14} className="text-slate-400" />
+                           <ViewColumnsIcon className="w-4 h-4 text-slate-400" />
                            {newProject.visibility}
                         </span>
-                        <ChevronDown size={14} className="text-slate-400" />
+                        <ChevronDown className="w-4 h-4 text-slate-400" />
                       </button>
                    </div>
 
@@ -351,12 +359,6 @@ const ProjectManager = ({ initialSelectedId }) => {
                    >
                      {editingProject ? 'Save Changes' : 'Create Board'}
                    </button>
-
-                   {!editingProject && (
-                     <button type="button" className="w-full py-3 bg-white/5 hover:bg-white/10 text-white/70 rounded font-black text-[10px] uppercase tracking-[0.2em] transition-all">
-                       Start with a template
-                     </button>
-                   )}
                 </form>
               </div>
            </div>

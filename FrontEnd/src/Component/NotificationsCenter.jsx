@@ -1,18 +1,16 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
+import { Users, CheckCircle2, ChevronRight, Trash2, Bell, MessageSquare, AlertCircle, Mail, Clock } from "lucide-react";
 import {
-  Bell,
-  CheckSquare,
-  MessageSquare,
-  AlertCircle,
-  Mail,
-  Clock,
-  Users,
-  CheckCheck,
-  Trash2,
-  ChevronRight,
-  Filter,
-} from "lucide-react";
+  BellIcon,
+  ChatBubbleLeftEllipsisIcon,
+  ExclamationCircleIcon,
+  EnvelopeIcon,
+  ClockIcon,
+  CheckBadgeIcon,
+  TrashIcon,
+  ChevronRightIcon,
+} from "@heroicons/react/24/outline";
 
 const NotificationsCenter = () => {
   const [notifications, setNotifications] = useState([]);
@@ -64,13 +62,13 @@ const NotificationsCenter = () => {
 
   const getNotificationIcon = (type) => {
     switch (type) {
-      case "task": return CheckSquare;
-      case "comment": return MessageSquare;
-      case "deadline": return AlertCircle;
-      case "invitation": return Mail;
-      case "reminder": return Clock;
+      case "task": return CheckCircle2;
+      case "comment": return ChatBubbleLeftEllipsisIcon;
+      case "deadline": return ExclamationCircleIcon;
+      case "invitation": return EnvelopeIcon;
+      case "reminder": return ClockIcon;
       case "team": return Users;
-      default: return Bell;
+      default: return BellIcon;
     }
   };
 
@@ -108,7 +106,7 @@ const NotificationsCenter = () => {
                 onClick={markAllAsRead}
                 className="flex items-center gap-2 px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold transition-all"
               >
-                <CheckCheck size={14} /> Clear Unread
+                <CheckBadgeIcon className="w-3.5 h-3.5" /> Clear Unread
               </button>
            )}
            <div className="flex bg-white border border-slate-200 p-1 rounded-xl shadow-sm">
@@ -140,7 +138,7 @@ const NotificationsCenter = () => {
                 return (
                   <div key={n._id} className={`bg-white border border-slate-200 rounded-2xl p-5 flex items-start gap-4 group transition-all relative overflow-hidden shadow-sm ${!n.read ? 'border-l-4 border-l-slate-900' : 'opacity-80 hover:opacity-100'}`}>
                     <div className={`w-12 h-12 rounded-xl flex items-center justify-center shrink-0 border border-slate-100 ${colorClasses}`}>
-                       <Icon size={20} />
+                       <Icon className="w-5 h-5" />
                     </div>
                     <div className="flex-1 min-w-0">
                        <div className="flex items-center justify-between gap-4 mb-1">
@@ -151,13 +149,13 @@ const NotificationsCenter = () => {
                        <div className="flex items-center gap-3">
                           {!n.read && (
                             <button onClick={() => markAsRead(n._id)} className="text-[10px] font-bold uppercase tracking-widest text-slate-900 hover:underline flex items-center gap-1">
-                               Mark Read <ChevronRight size={12} />
+                               Mark Read <ChevronRightIcon className="w-3 h-3" />
                             </button>
                           )}
                        </div>
                     </div>
                     <button onClick={() => deleteNotification(n._id)} className="opacity-0 group-hover:opacity-100 p-2 text-slate-300 hover:text-rose-600 transition-all shrink-0">
-                       <Trash2 size={16} />
+                       <TrashIcon className="w-4 h-4" />
                     </button>
                   </div>
                 );

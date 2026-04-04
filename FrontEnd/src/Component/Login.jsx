@@ -107,8 +107,8 @@ const Login = () => {
                 <div className="absolute inset-0 flex items-center">
                   <div className="w-full border-t border-slate-100"></div>
                 </div>
-                <div className="relative flex justify-center text-[10px] uppercase font-bold tracking-widest">
-                  <span className="bg-white px-4 text-slate-400">Or use email</span>
+                <div className="relative flex justify-center text-[10px] uppercase font-black tracking-widest">
+                  <span className="bg-white px-4 text-slate-400 uppercase">Or continue with email</span>
                 </div>
               </div>
             </div>
@@ -178,8 +178,8 @@ const Login = () => {
           </div>
         </div>
 
-        <p className="text-[9px] font-bold text-slate-400 uppercase tracking-[0.3em] text-center">
-          CopyRight Ritesh Chaudhary WORKSPHERE
+        <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.4em] text-center opacity-50">
+          WorkSphere
         </p>
       </div>
     </div>

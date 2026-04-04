@@ -4,29 +4,28 @@ import { DragDropContext, Droppable, Draggable } from "@hello-pangea/dnd";
 import {
   Plus,
   X,
-  Flag,
-  MessageSquare,
   MoreHorizontal,
-  Plus as PlusIcon,
-  Paperclip,
-  CheckSquare,
-  Eye,
-  MoreVertical,
-  Link,
-  BarChart3,
-  Users as UsersIcon,
+  CheckCircle2,
+  Users,
+  LayoutGrid,
+  ChevronLeft,
   Search,
-  Calendar,
-  Filter,
-  Clock,
-  Layout,
-  Target,
-  LayoutGrid
+  CheckCircle
 } from "lucide-react";
+import {
+  ChatBubbleLeftEllipsisIcon,
+  ChartBarIcon,
+  CalendarIcon,
+  ClockIcon,
+  FunnelIcon,
+  MagnifyingGlassIcon,
+  Bars2Icon
+} from "@heroicons/react/24/outline";
+import { CheckCircleIcon as CheckCircleIconSolid } from "@heroicons/react/24/solid";
 import TaskModal from "./TaskModal";
 import SearchFilters from "./SearchFilters";
 
-const TaskBoard = ({ selectedProjectId, onBack }) => {
+const TaskBoard = ({ selectedProjectId, onBack, globalSearch }) => {
   const [columns, setColumns] = useState({});
   const [addingCardTo, setAddingCardTo] = useState(null);
   const [showAddList, setShowAddList] = useState(false);
@@ -390,7 +389,7 @@ const TaskBoard = ({ selectedProjectId, onBack }) => {
                 onClick={onBack}
                 className="flex items-center gap-2 px-3 py-1.5 hover:bg-slate-100 rounded-lg text-secondary hover:text-indigo-600 transition-all text-[10px] font-black uppercase tracking-widest border border-slate-200"
               >
-                <LayoutGrid size={14} />
+                <LayoutGrid className="w-4 h-4" />
                 <span>workspace</span>
               </button>
             )}
@@ -402,8 +401,8 @@ const TaskBoard = ({ selectedProjectId, onBack }) => {
                  </h1>
               </div>
               <div className="flex items-center gap-4 text-[10px] font-black text-slate-500 tracking-[0.2em] uppercase opacity-70">
-                 <span className="flex items-center gap-1"><UsersIcon size={12} /> {users.length} members</span>
-                 <span className="flex items-center gap-1"><Clock size={12} /> {projectStats.total} active tasks</span>
+                 <span className="flex items-center gap-1"><Users className="w-3.5 h-3.5" /> {users.length} members</span>
+                 <span className="flex items-center gap-1"><ClockIcon className="w-3.5 h-3.5" /> {projectStats.total} active tasks</span>
               </div>
             </div>
           </div>
@@ -425,6 +424,7 @@ const TaskBoard = ({ selectedProjectId, onBack }) => {
            <SearchFilters 
              onSearchResults={handleSearchResults} 
              initialFilters={{ project: selectedProjectId }} 
+             globalSearch={globalSearch}
            />
            <button 
               onClick={() => {
@@ -442,7 +442,7 @@ const TaskBoard = ({ selectedProjectId, onBack }) => {
               }}
               className="flex items-center gap-2 px-6 py-3 bg-indigo-600 text-white rounded-xl font-black text-[10px] uppercase tracking-widest shadow-lg shadow-indigo-600/20 active:scale-95 transition-all"
            >
-              <PlusIcon size={14} />
+              <Plus className="w-4 h-4" />
               <span>Create Task</span>
            </button>
         </div>
@@ -496,7 +496,7 @@ const TaskBoard = ({ selectedProjectId, onBack }) => {
                                 onClick={() => setActiveMenuCol(activeMenuCol === columnId ? null : columnId)}
                                 className="p-1.5 hover:bg-slate-200 rounded-lg text-slate-400 opacity-0 group-hover/list:opacity-100 transition-all font-bold"
                               >
-                                <MoreHorizontal size={16} />
+                                <MoreHorizontal className="w-5 h-5" />
                               </button>
 
                               {activeMenuCol === columnId && (
@@ -554,7 +554,7 @@ const TaskBoard = ({ selectedProjectId, onBack }) => {
                                       <div className="flex items-center gap-3 text-slate-500 pt-1">
                                         {item.dueDate && (
                                           <div className={`flex items-center gap-1 text-[9px] font-black px-2 py-0.5 rounded ${new Date(item.dueDate) < new Date() && item.status !== 'completed' ? 'bg-rose-50 text-rose-600' : 'bg-slate-100'}`}>
-                                            <Calendar size={11} />
+                                            <Calendar className="w-3 h-3" />
                                             <span>{new Date(item.dueDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</span>
                                           </div>
                                         )}
@@ -562,13 +562,13 @@ const TaskBoard = ({ selectedProjectId, onBack }) => {
                                         <div className="flex items-center gap-3 opacity-60">
                                            {item.comments?.length > 0 && (
                                              <div className="flex items-center gap-1">
-                                               <MessageSquare size={12} />
+                                               <MessageSquare className="w-3.5 h-3.5" />
                                                <span className="text-[10px] font-black">{item.comments.length}</span>
                                              </div>
                                            )}
                                            {total > 0 && (
                                              <div className={`flex items-center gap-1 ${completed === total ? 'text-emerald-500 opacity-100' : ''}`}>
-                                               <CheckSquare size={12} />
+                                               <CheckCircle2 className="w-3.5 h-3.5" />
                                                <span className="text-[10px] font-black">{completed}/{total}</span>
                                              </div>
                                            )}
@@ -613,7 +613,7 @@ const TaskBoard = ({ selectedProjectId, onBack }) => {
                           />
                           <div className="flex items-center gap-2">
                              <button onClick={() => createTask(columnId)} className="flex-1 bg-indigo-600 text-white py-2 rounded-lg font-black text-[10px] uppercase tracking-widest">Add</button>
-                             <button onClick={() => setAddingCardTo(null)} className="p-2 text-slate-400 hover:bg-slate-100 rounded-lg"><X size={16} /></button>
+                             <button onClick={() => setAddingCardTo(null)} className="p-2 text-slate-400 hover:bg-slate-100 rounded-lg"><X className="w-4 h-4" /></button>
                           </div>
                         </div>
                       ) : (
@@ -621,7 +621,7 @@ const TaskBoard = ({ selectedProjectId, onBack }) => {
                             onClick={() => setAddingCardTo(columnId)}
                             className="w-full flex items-center justify-center gap-2 p-3 rounded-xl text-slate-500 hover:bg-white hover:text-slate-900 transition-all text-[10px] font-black uppercase tracking-widest"
                         >
-                            <Plus size={16} />
+                            <Plus className="w-4 h-4" />
                             <span>Add Task</span>
                         </button>
                       )}
@@ -647,7 +647,7 @@ const TaskBoard = ({ selectedProjectId, onBack }) => {
                 />
                 <div className="flex gap-2">
                   <button onClick={addList} className="flex-1 bg-indigo-600 text-white py-2 rounded-lg font-black text-[10px] uppercase tracking-widest">Add List</button>
-                  <button onClick={() => setShowAddList(false)} className="px-3 py-2 text-slate-400 hover:bg-slate-200 rounded-lg"><X size={16} /></button>
+                  <button onClick={() => setShowAddList(false)} className="px-3 py-2 text-slate-400 hover:bg-slate-200 rounded-lg"><X className="w-4 h-4" /></button>
                 </div>
               </div>
             ) : (
@@ -655,7 +655,7 @@ const TaskBoard = ({ selectedProjectId, onBack }) => {
                 onClick={() => setShowAddList(true)}
                 className="w-80 shrink-0 p-5 flex items-center justify-center gap-3 rounded-2xl border-2 border-dashed border-slate-200 hover:border-indigo-600/30 hover:bg-white text-slate-400 hover:text-indigo-600 font-black text-[10px] uppercase tracking-widest transition-all group h-fit mt-0"
               >
-                <Plus size={20} className="group-hover:scale-110 transition-transform" />
+                <Plus className="w-5 h-5 group-hover:scale-110 transition-transform" />
                 <span>New List</span>
               </button>
             )}
@@ -667,14 +667,14 @@ const TaskBoard = ({ selectedProjectId, onBack }) => {
              <div className="p-12 space-y-12 animate-in fade-in duration-500 bg-white">
                 <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
                     {[
-                      { label: "Completion Rate", value: `${projectStats.completionRate}%`, color: "text-indigo-600", bg: "bg-indigo-50", icon: Target },
+                      { label: "Completion Rate", value: `${projectStats.completionRate}%`, color: "text-indigo-600", bg: "bg-indigo-50", icon: CheckCircle2 },
                       { label: "In Progress", value: projectStats.doing, color: "text-blue-600", bg: "bg-blue-50", icon: Clock },
-                      { label: "Done", value: projectStats.completed, color: "text-emerald-600", bg: "bg-emerald-50", icon: CheckSquare },
+                      { label: "Done", value: projectStats.completed, color: "text-emerald-600", bg: "bg-emerald-50", icon: CheckCircle2 },
                       { label: "Total Tasks", value: projectStats.total, color: "text-slate-600", bg: "bg-slate-100", icon: LayoutGrid }
                     ].map((stat, i) => (
                       <div key={i} className="bg-white p-8 rounded-2xl border border-slate-200 shadow-sm">
                          <div className={`w-10 h-10 rounded-xl ${stat.bg} ${stat.color} flex items-center justify-center mb-6`}>
-                            <stat.icon size={20} />
+                            <stat.icon className="w-5 h-5" />
                          </div>
                          <p className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] mb-2">{stat.label}</p>
                          <p className={`text-3xl font-black ${stat.color} tracking-tight`}>{stat.value}</p>
@@ -732,7 +732,7 @@ const TaskBoard = ({ selectedProjectId, onBack }) => {
                        </div>
                        
                        <button className="relative z-10 p-3 text-slate-400 hover:text-rose-500 transition-colors">
-                          <MoreHorizontal size={20} />
+                          <EllipsisHorizontalIcon className="w-5 h-5" />
                        </button>
                     </div>
                   ))}

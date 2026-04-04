@@ -9,34 +9,48 @@ import ProjectManager from "./Project";
 import NotificationsCenter from "./NotificationsCenter";
 import Note from "./Note";
 import {
-  LayoutGrid,
-  Folder,
-  CheckSquare,
-  BarChart3,
+  Layout,
   Users,
   Settings,
-  LogOut,
-  Search,
-  Bell,
-  User,
+  ChevronDown,
   X,
   Plus,
-  Zap,
-  Activity,
-  Target,
-  Trello,
-  Clock,
-  Menu,
+  User,
+  MoreHorizontal,
+  LayoutGrid,
+  CheckCircle2,
   ChevronRight,
   ChevronLeft,
-  Share2,
-  MoreHorizontal,
-  Table as TableIcon,
-  Layout,
-  Calendar as CalendarIcon,
-  ChevronDown,
-  StickyNote
+  Edit2
 } from "lucide-react";
+import {
+  FolderIcon,
+  ChartBarSquareIcon,
+  MagnifyingGlassIcon,
+  BellIcon,
+  PlusIcon,
+  BoltIcon,
+  ArrowTrendingUpIcon,
+  ClockIcon,
+  ShareIcon,
+  ViewColumnsIcon,
+  CalendarIcon,
+  DocumentTextIcon,
+  Bars3BottomLeftIcon,
+  Bars3Icon,
+  CommandLineIcon,
+  ArrowRightOnRectangleIcon
+} from "@heroicons/react/24/outline";
+import {
+  FolderIcon as FolderIconSolid,
+  ChartBarSquareIcon as ChartBarSquareIconSolid,
+  BellIcon as BellIconSolid,
+  PlusIcon as PlusIconSolid,
+  BoltIcon as BoltIconSolid,
+  CalendarIcon as CalendarIconSolid,
+  DocumentTextIcon as DocumentTextIconSolid,
+  ViewColumnsIcon as ViewColumnsIconSolid
+} from "@heroicons/react/24/solid";
 import TaskModal from "./TaskModal";
 
 const Dashboard = () => {
@@ -62,6 +76,7 @@ const Dashboard = () => {
   const [showTaskModal, setShowTaskModal] = useState(false);
   const [calendarKey, setCalendarKey] = useState(0);
   const [inviteEmail, setInviteEmail] = useState("");
+  const [globalSearch, setGlobalSearch] = useState("");
   const actionsRef = useRef(null);
 
   useEffect(() => {
@@ -71,7 +86,21 @@ const Dashboard = () => {
       }
     };
     document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
+    
+    // Global Keyboard Shortcuts (CMD+K / CTRL+K for search)
+    const handleKeyDown = (e) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+        e.preventDefault();
+        const searchInput = document.getElementById('global-search-input');
+        if (searchInput) searchInput.focus();
+      }
+    };
+    document.addEventListener("keydown", handleKeyDown);
+
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+      document.removeEventListener("keydown", handleKeyDown);
+    };
   }, []);
   const token = localStorage.getItem("token");
   const [stats, setStats] = useState({
@@ -187,6 +216,7 @@ const Dashboard = () => {
     setTimeout(() => setShowShareTooltip(false), 2000);
   };
 
+
   const NavItem = ({ id, label, Icon, badge, onClick }) => (
     <button
       onClick={() => {
@@ -200,7 +230,7 @@ const Dashboard = () => {
           : "text-secondary hover:bg-indigo-50 dark:hover:bg-indigo-500/5 hover:text-indigo-600"
       }`}
     >
-      <Icon size={18} className={`${activeView === id ? "text-white" : "text-secondary group-hover:text-indigo-600 transition-colors"}`} />
+      <Icon className={`w-[18px] h-[18px] ${activeView === id ? "text-white" : "text-secondary group-hover:text-indigo-600 transition-colors"}`} />
       {sidebarOpen && <span className="text-sm flex-1 text-left tracking-tight">{label}</span>}
       {sidebarOpen && badge > 0 && (
         <span className={`${activeView === id ? "bg-white/20 text-white" : "bg-indigo-100 text-indigo-600 dark:bg-indigo-500/20 dark:text-indigo-400"} text-[10px] font-bold px-1.5 py-0.5 rounded-md`}>
@@ -247,27 +277,41 @@ const Dashboard = () => {
       <aside 
         className={`${sidebarOpen ? 'w-64' : 'w-20'} h-full bg-sidebar border-r border-base flex flex-col transition-all duration-300 ease-in-out z-50`}
       >
-        <div className="p-6 flex items-center justify-between mb-2">
-          <div className="flex items-center gap-3">
-            <div className="w-9 h-9 bg-indigo-600 rounded-xl flex items-center justify-center shadow-lg shadow-indigo-600/30">
-              <Zap className="text-white" size={20} fill="currentColor" />
+        <div className={`p-6 flex items-center ${sidebarOpen ? 'justify-between' : 'justify-center'} mb-2 relative`}>
+          <div 
+            className="flex items-center gap-3 cursor-pointer group" 
+            onClick={() => {
+               setActiveView("dashboard");
+               setSelectedProjectId(null);
+               if (!sidebarOpen) setSidebarOpen(true);
+            }}
+          >
+            <div className={`w-9 h-9 bg-indigo-600 rounded-xl flex items-center justify-center shadow-lg shadow-indigo-600/30 transition-all duration-500 ${!sidebarOpen ? 'group-hover:scale-110 group-hover:rotate-12' : 'group-hover:shadow-indigo-600/50'}`}>
+              <BoltIconSolid className="text-white w-5 h-5" />
             </div>
-            {sidebarOpen && <span className="font-bold text-xl text-primary tracking-tighter">WorkSphere</span>}
+            {sidebarOpen && (
+               <div className="flex flex-col">
+                  <span className="font-black text-xl text-primary tracking-tighter leading-none">WorkSphere</span>
+                  <span className="text-[10px] text-indigo-500 font-bold uppercase tracking-[0.2em] mt-0.5">Management</span>
+               </div>
+            )}
           </div>
-          {sidebarOpen && (
-            <button onClick={() => setSidebarOpen(false)} className="p-1.5 hover:bg-main rounded-lg text-secondary hover:text-primary transition-all">
-              <ChevronLeft size={16} />
-            </button>
-          )}
+          <button 
+            onClick={() => setSidebarOpen(!sidebarOpen)} 
+            className={`p-1.5 hover:bg-main rounded-lg text-secondary hover:text-primary transition-all duration-300 ${!sidebarOpen ? 'absolute -right-3 top-8 bg-card border border-base shadow-lg z-[60] scale-90 hover:scale-100' : ''}`}
+            title={sidebarOpen ? "Collapse Sidebar" : "Expand Sidebar"}
+          >
+            {sidebarOpen ? <Bars3BottomLeftIcon className="w-5 h-5" /> : <Bars3Icon className="w-5 h-5" />}
+          </button>
         </div>
 
         <nav className="flex-1 px-3 space-y-1 overflow-y-auto no-scrollbar py-2">
           <NavItem id="dashboard" label="Overview" Icon={LayoutGrid} />
           <NavItem id="calendar" label="Calendar" Icon={CalendarIcon} />
-          <NavItem id="boards" label="Boards" Icon={Layout} />
+          <NavItem id="boards" label="Boards" Icon={ViewColumnsIcon} />
           <NavItem id="team" label="Team" Icon={Users} />
-          <NavItem id="notes" label="Notes" Icon={StickyNote} />
-          <NavItem id="notifications" label="Notifications" Icon={Bell} badge={unreadCount} />
+          <NavItem id="notes" label="Notes" Icon={DocumentTextIcon} />
+          <NavItem id="notifications" label="Notifications" Icon={BellIcon} badge={unreadCount} />
           <NavItem id="settings" label="Settings" Icon={Settings} />
         </nav>
 
@@ -277,7 +321,7 @@ const Dashboard = () => {
                 {user.profilePhoto ? (
                    <img src={`http://localhost:5000${user.profilePhoto}`} alt="" className="w-full h-full object-cover" />
                 ) : (
-                   <User size={18} className="text-secondary" />
+                   <User className="text-secondary w-5 h-5" />
                 )}
              </div>
              {sidebarOpen && (
@@ -291,7 +335,7 @@ const Dashboard = () => {
             onClick={() => { localStorage.removeItem("token"); navigate("/login"); }} 
             className="w-full flex items-center gap-3 px-3 py-2 text-xs font-bold text-rose-500 hover:bg-rose-50 rounded-xl transition-all"
           >
-            <LogOut size={16} />
+            <ArrowRightOnRectangleIcon className="w-4 h-4" />
             {sidebarOpen && <span>Sign out</span>}
           </button>
         </div>
@@ -299,44 +343,66 @@ const Dashboard = () => {
 
       {/* Main Content */}
       <main className="flex-1 flex flex-col bg-main relative overflow-hidden">
-        <header className="h-16 bg-card border-base border-b flex items-center justify-between px-8 z-40">
-           <div className="flex items-center gap-6 text-sm text-secondary font-medium">
-              <div className="flex items-center gap-1.5">
-                  <button onClick={() => window.history.back()} className="p-1 hover:bg-main rounded-md transition-colors"><ChevronLeft size={16} /></button>
-                  <button onClick={() => window.history.forward()} className="p-1 hover:bg-main rounded-md transition-colors"><ChevronRight size={16} /></button>
-              </div>
-              <span className="text-base opacity-30">/</span>
-              <button onClick={() => { setActiveView("dashboard"); setSelectedProjectId(null); }} className="hover:text-primary transition-colors">Workspace</button>
-              <span className="text-secondary opacity-30">/</span>
-              <span className="text-primary font-bold shrink-0">{viewLabels[activeView] || "Overview"}</span>
-           </div>
+         <header className="h-16 bg-card border-base border-b flex items-center justify-between px-8 z-40 sticky top-0">
+            <div className="flex items-center gap-8 text-sm text-secondary font-medium">
+               <div className="flex items-center gap-1.5">
+                   <button onClick={() => window.history.back()} className="p-1 hover:bg-main rounded-md transition-colors"><ChevronLeft className="w-4 h-4" /></button>
+                   <button onClick={() => window.history.forward()} className="p-1 hover:bg-main rounded-md transition-colors"><ChevronRight className="w-4 h-4" /></button>
+               </div>
+               <div className="h-4 w-[1px] bg-base mx-1 hidden md:block" />
+               <div className="hidden md:flex items-center gap-4">
+                  <button onClick={() => { setActiveView("dashboard"); setSelectedProjectId(null); }} className="hover:text-primary transition-colors">Workspace</button>
+                  <span className="text-secondary opacity-30">/</span>
+                  <span className="text-primary font-black tracking-tight shrink-0">{viewLabels[activeView] || "Overview"}</span>
+               </div>
+            </div>
 
-           <div className="flex items-center gap-4">
-              <button 
-                onClick={handleShare}
-                className="p-2 text-secondary hover:text-primary transition-colors relative"
-                title="Share workspace"
-              >
-                 <Share2 size={18} />
-                 {showShareTooltip && (
-                   <div className="absolute top-full mt-2 left-1/2 -translate-x-1/2 px-2 py-1 bg-slate-900 dark:bg-indigo-600 text-white text-[10px] font-bold rounded shadow-xl animate-in fade-in zoom-in duration-200 z-[60] whitespace-nowrap">Link Copied!</div>
-                 )}
-              </button>
-
-              <div className="relative" ref={actionsRef}>
-                <button onClick={() => setShowActionsDropdown(!showActionsDropdown)} className="p-2 text-secondary hover:text-primary transition-colors"><MoreHorizontal size={18} /></button>
-                {showActionsDropdown && (
-                  <div className="absolute top-full mt-2 right-0 w-48 bg-card border border-base rounded-xl shadow-2xl py-2 z-[60] animate-in fade-in slide-in-from-top-2 duration-200">
-                    <button onClick={() => { setActiveView("settings"); setShowActionsDropdown(false); }} className="w-full text-left px-4 py-2 text-sm text-secondary hover:bg-main hover:text-primary flex items-center gap-2"><Settings size={14} /> Workspace Settings</button>
+            {/* GLOBAL SEARCH BAR */}
+            <div className="flex-1 max-w-xl mx-8 hidden lg:block">
+               <div className="relative group">
+                  <MagnifyingGlassIcon className="absolute left-4 top-1/2 -translate-y-1/2 text-secondary group-focus-within:text-indigo-600 transition-colors w-4 h-4" />
+                  <input 
+                    id="global-search-input"
+                    type="text" 
+                    placeholder="Search tasks, projects, or team members..."
+                    className="w-full bg-main border border-base rounded-2xl pl-12 pr-12 py-2 text-sm text-primary placeholder:text-secondary focus:ring-4 focus:ring-indigo-500/5 focus:border-indigo-500 outline-none transition-all"
+                    value={globalSearch}
+                    onChange={(e) => setGlobalSearch(e.target.value)}
+                    onFocus={() => { if (activeView !== "boards" && activeView !== "tasks") setActiveView("boards"); }}
+                  />
+                  <div className="absolute right-4 top-1/2 -translate-y-1/2 flex items-center gap-1 px-1.5 py-0.5 bg-main border border-base rounded text-[10px] font-black text-secondary uppercase tracking-widest opacity-60 pointer-events-none group-focus-within:hidden">
+                    <CommandLineIcon className="w-3 h-3" />
+                    <span>K</span>
                   </div>
-                )}
-              </div>
+               </div>
+            </div>
 
-              <div className="h-6 w-[1px] bg-base mx-1" />
-              <button onClick={() => setShowInviteModal(true)} className="flex items-center gap-2 px-4 py-2 text-indigo-500 hover:bg-indigo-500/10 border border-indigo-500/20 rounded-xl font-bold text-sm transition-all"><Users size={16} /><span>Invite</span></button>
-              <button onClick={() => setShowQuickAdd(true)} className="flex items-center gap-2 px-4 py-2 bg-slate-900 dark:bg-indigo-600 text-white rounded-xl font-bold text-sm transition-all shadow-md active:scale-95 hover:opacity-90"><Plus size={18} /><span>New task</span></button>
-           </div>
-        </header>
+            <div className="flex items-center gap-4">
+               <button 
+                 onClick={handleShare}
+                 className="p-2 text-secondary hover:text-primary transition-colors relative"
+                 title="Share workspace"
+               >
+                  <ShareIcon className="w-5 h-5" />
+                  {showShareTooltip && (
+                    <div className="absolute top-full mt-2 left-1/2 -translate-x-1/2 px-2 py-1 bg-slate-900 dark:bg-indigo-600 text-white text-[10px] font-bold rounded shadow-xl animate-in fade-in zoom-in duration-200 z-[60] whitespace-nowrap">Link Copied!</div>
+                  )}
+               </button>
+
+               <div className="relative" ref={actionsRef}>
+                 <button onClick={() => setShowActionsDropdown(!showActionsDropdown)} className="p-2 text-secondary hover:text-primary transition-colors"><MoreHorizontal className="w-5 h-5" /></button>
+                 {showActionsDropdown && (
+                   <div className="absolute top-full mt-2 right-0 w-48 bg-card border border-base rounded-xl shadow-2xl py-2 z-[60] animate-in fade-in slide-in-from-top-2 duration-200">
+                     <button onClick={() => { setActiveView("settings"); setShowActionsDropdown(false); }} className="w-full text-left px-4 py-2 text-sm text-secondary hover:bg-main hover:text-primary flex items-center gap-2"><Settings className="w-4 h-4" /> Workspace Settings</button>
+                   </div>
+                 )}
+               </div>
+
+               <div className="h-6 w-[1px] bg-base mx-1" />
+               <button onClick={() => setShowInviteModal(true)} className="hidden sm:flex items-center gap-2 px-4 py-2 text-indigo-500 hover:bg-indigo-500/10 border border-indigo-500/20 rounded-xl font-bold text-sm transition-all"><Users className="w-4 h-4" /><span>Invite</span></button>
+               <button onClick={() => setShowQuickAdd(true)} className="flex items-center gap-2 px-4 py-2 bg-slate-900 dark:bg-indigo-600 text-white rounded-xl font-bold text-sm transition-all shadow-md active:scale-95 hover:opacity-90"><Plus className="w-5 h-5" /><span>New task</span></button>
+            </div>
+         </header>
 
         <div className="flex-1 overflow-auto custom-scrollbar">
           {activeView === "dashboard" && (
@@ -356,14 +422,14 @@ const Dashboard = () => {
                 {/* STAT COLUMNS */}
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                    {[
-                     { label: "Active Tasks", value: stats.activeTasks, color: "bg-indigo-600", Icon: Activity },
-                     { label: "Resolved", value: stats.resolvedTasks, color: "bg-emerald-500", Icon: CheckSquare },
-                     { label: "Completion Rate", value: `${stats.completionRate}%`, color: "bg-amber-500", Icon: BarChart3 },
+                     { label: "Active Tasks", value: stats.activeTasks, color: "bg-indigo-600", Icon: ArrowTrendingUpIcon },
+                     { label: "Resolved", value: stats.resolvedTasks, color: "bg-emerald-500", Icon: CheckCircle2 },
+                     { label: "Completion Rate", value: `${stats.completionRate}%`, color: "bg-amber-500", Icon: ChartBarSquareIcon },
                    ].map((stat, i) => (
                      <div key={i} className="bg-card p-6 rounded-2xl border border-base shadow-sm hover:shadow-md transition-all group overflow-hidden relative">
                         <div className="absolute right-0 top-0 w-24 h-24 bg-primary/5 rounded-full -mr-8 -mt-8 group-hover:scale-125 transition-transform duration-500" />
                         <div className="flex items-center gap-4 relative">
-                           <div className={`p-3 rounded-xl ${stat.color} text-white shadow-lg`}><stat.Icon size={20} /></div>
+                           <div className={`p-3 rounded-xl ${stat.color} text-white shadow-lg`}><stat.Icon className="w-5 h-5" /></div>
                            <div>
                               <p className="text-[10px] font-black text-secondary tracking-[0.2em] uppercase mb-1">{stat.label}</p>
                               <p className="text-2xl font-black text-primary tracking-tighter">{stat.value}</p>
@@ -393,7 +459,7 @@ const Dashboard = () => {
                                   <p className="text-sm font-black text-primary uppercase tracking-tight truncate">{p.name}</p>
                                   <p className="text-[10px] text-secondary font-bold opacity-60">Board View</p>
                                </div>
-                               <Plus size={14} className="ml-auto opacity-0 group-hover:opacity-100 transition-opacity text-secondary" />
+                               <Plus className="ml-auto opacity-0 group-hover:opacity-100 transition-opacity text-secondary w-4 h-4" />
                             </button>
                          ))}
                       </div>
@@ -405,7 +471,7 @@ const Dashboard = () => {
                          {recentTasks.length > 0 ? (
                            recentTasks.slice(0, 5).map(task => (
                              <div key={task._id} className="flex items-start gap-4 p-4 bg-card border border-base rounded-2xl">
-                                <div className="mt-1 p-1 bg-indigo-50 dark:bg-indigo-500/10 text-indigo-600 rounded"><Activity size={14} /></div>
+                                <div className="mt-1 p-1 bg-indigo-50 dark:bg-indigo-500/10 text-indigo-600 rounded"><ArrowTrendingUpIcon className="w-4 h-4" /></div>
                                 <div className="text-left">
                                    <p className="text-xs font-bold text-primary mb-1 underline hover:text-indigo-600 cursor-pointer" onClick={() => { setSelectedTask(task); setShowTaskModal(true); }}>{task.title}</p>
                                    <p className="text-[10px] text-secondary">Added to <span className="font-bold opacity-100">{projects.find(p => p._id === task.project)?.name || "Task Board"}</span></p>
@@ -425,7 +491,7 @@ const Dashboard = () => {
 
           {activeView === "boards" && (
              <div className="h-full flex flex-col min-h-0 bg-main">
-                <ProjectManager initialSelectedId={selectedProjectId} />
+                <ProjectManager initialSelectedId={selectedProjectId} globalSearch={globalSearch} />
              </div>
           )}
 
@@ -460,7 +526,7 @@ const Dashboard = () => {
                      <option value="">No Workspace (Global)</option>
                      {projects.map(p => <option key={p._id} value={p._id}>{p.name}</option>)}
                    </select>
-                   <Folder size={14} className="absolute right-4 top-1/2 -translate-y-1/2 text-secondary pointer-events-none" />
+                   <FolderIcon className="absolute right-4 top-1/2 -translate-y-1/2 text-secondary pointer-events-none w-4 h-4" />
                  </div>
                  <div className="flex gap-3 pt-2">
                     <button type="button" className="flex-1 py-3 bg-main hover:bg-card text-secondary rounded-xl font-bold transition-all text-sm border border-base" onClick={() => setShowQuickAdd(false)}>Cancel</button>
@@ -475,7 +541,7 @@ const Dashboard = () => {
            <div className="bg-card w-full max-w-md rounded-2xl border border-base shadow-2xl p-8 animate-in zoom-in-95 duration-200" onClick={e => e.stopPropagation()}>
               <div className="flex justify-between items-center mb-6">
                 <h2 className="text-xl font-bold text-primary">Invite Team Member</h2>
-                <button onClick={() => setShowInviteModal(false)} className="text-secondary hover:text-primary transition-colors"><X size={20} /></button>
+                <button onClick={() => setShowInviteModal(false)} className="text-secondary hover:text-primary transition-colors"><X className="w-5 h-5" /></button>
               </div>
               <form onSubmit={async (e) => {
                 e.preventDefault();

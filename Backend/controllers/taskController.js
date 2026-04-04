@@ -2,6 +2,7 @@ const Task = require("../models/Task");
 const User = require("../models/User");
 const Notification = require("../models/Notification");
 const Invitation = require("../models/Invitation");
+const Project = require("../models/Project");
 const { sendInvitationEmail } = require("../config/emailService");
 const crypto = require("crypto");
 const mongoose = require("mongoose");
@@ -61,23 +62,40 @@ exports.getTasks = async (req, res) => {
     const { status, project, assignedTo, priority, search, archived, limit, dueDate, tags } =
       req.query;
 
-    let query = { user: userId, isArchived: archived === "true" };
+    // First identify all projects the user has access to
+    const userProjects = await Project.find({
+      $or: [{ owner: userId }, { teamMembers: userId }]
+    }).distinct("_id");
+
+    let query = { isArchived: archived === "true" };
 
     if (status) {
       query.status = status.includes(",") ? { $in: status.split(",") } : status;
     }
     
-    // Strict Project Filtering: 
+    // Improved Project/Access Filtering
     if (project && project !== "all") {
       if (project === "null" || project === "undefined") {
-        query.project = null; // Filter for "Global" tasks specifically
+        query.project = null;
+        query.user = userId; // Global tasks are private to the creator
       } else if (mongoose.Types.ObjectId.isValid(project)) {
-        query.project = new mongoose.Types.ObjectId(project);
+        const targetProjId = new mongoose.Types.ObjectId(project);
+        // Verify access before filtering
+        if (!userProjects.some(id => id.toString() === project)) {
+           return res.status(403).json({ message: "Access denied to requested project scope" });
+        }
+        query.project = targetProjId;
       }
-    } else if (project !== "all") {
-      // Default to null (isolation) if no project is specified
-      // This prevents leaking tasks from all projects into the global workspace or board transitions
+    } else if (project === "all" || search) {
+      // Global Search or "All Projects" view: include user's projects + user's global tasks
+      query.$or = [
+        { project: { $in: userProjects } },
+        { project: null, user: userId }
+      ];
+    } else {
+      // Default isolation (e.g. initial load of workspace)
       query.project = null;
+      query.user = userId;
     }
     if (assignedTo) query.assignedTo = assignedTo;
     if (priority) {

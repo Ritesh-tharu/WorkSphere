@@ -2,26 +2,29 @@ import React, { useState } from "react";
 import axios from "axios";
 import {
   X,
-  Flag,
-  Clock,
-  Save,
   Plus,
-  Send,
-  CheckSquare,
-  MessageSquare,
-  Circle,
   CheckCircle2,
   User,
+  Settings,
+  ChevronDown,
+  LayoutGrid,
+  MoreHorizontal,
+  Clock,
+  Send,
+  MessageSquare,
   Calendar,
-  Layers,
+  List,
   Tag,
   Paperclip,
   Trash2,
   Folder,
-  History,
-  Activity as ActivityIcon,
-  Palette
+  RotateCw,
+  BarChart2
 } from "lucide-react";
+import { 
+  CheckCircleIcon as CheckCircleIconSolidInner,
+  ArrowDownOnSquareIcon as SaveIcon
+} from "@heroicons/react/24/solid";
 import TaskAttachments from "./TaskAttachments";
 
 const PRIORITY_CONFIG = {
@@ -38,10 +41,10 @@ const STATUS_CONFIG = {
 };
 
 const TABS = [
-  { id: "details", label: "Details", Icon: Layers },
-  { id: "checklist", label: "Checklist", Icon: CheckSquare },
+  { id: "details", label: "Details", Icon: List },
+  { id: "checklist", label: "Checklist", Icon: CheckCircle2 },
   { id: "comments", label: "Comments", Icon: MessageSquare },
-  { id: "activity", label: "Activity", Icon: History },
+  { id: "activity", label: "Activity", Icon: RotateCw },
 ];
 
 const LABEL_COLORS = [
@@ -150,6 +153,15 @@ export default function TaskModal({ task, onClose, onUpdate, users = [], project
     } catch (err) { console.error(err); }
   };
 
+  const handleToggle = async (itemId) => {
+    try {
+      const { data } = await axios.put(`${base}/${task._id}/checklist/${itemId}/toggle`, {}, getHeaders());
+      const newCheck = (editedTask.checklist || []).map(i => i._id === itemId ? data : i);
+      patch({ checklist: newCheck });
+      if (onUpdate) onUpdate();
+    } catch (err) { console.error(err); }
+  };
+
   const handleArchive = async () => {
     setLoading(true);
     try {
@@ -197,11 +209,11 @@ export default function TaskModal({ task, onClose, onUpdate, users = [], project
             />
           </div>
 
-          <button 
+           <button 
             className="p-2 rounded-xl text-slate-400 hover:text-slate-900 hover:bg-slate-100 transition-all shrink-0" 
             onClick={onClose}
           >
-            <X size={20} />
+            <X className="w-5 h-5" />
           </button>
         </header>
 
@@ -213,7 +225,7 @@ export default function TaskModal({ task, onClose, onUpdate, users = [], project
               onClick={() => setActiveTab(id)}
               className={`flex items-center gap-2 px-5 py-4 text-xs font-bold border-b-2 transition-all shrink-0 ${activeTab === id ? 'text-primary border-primary' : 'text-secondary border-transparent hover:text-primary hover:bg-main'}`}
             >
-              <Icon size={14} />
+              <Icon className="w-4 h-4" />
               <span>{label}</span>
               {id === "checklist" && checklist.length > 0 && (
                 <span className="text-[10px] font-bold bg-slate-100 text-slate-500 px-1.5 py-0.5 rounded-full border border-slate-200 ml-1">{checklist.length}</span>
@@ -227,29 +239,7 @@ export default function TaskModal({ task, onClose, onUpdate, users = [], project
           <div className="flex-1 p-8 overflow-y-auto custom-scrollbar">
             {activeTab === "details" && (
               <div className="space-y-10">
-                {/* <section className="space-y-4">
-                  <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest flex items-center gap-2">
-                    Cover Image
-                  </h4>
-                  <input
-                    type="text"
-                    className="w-full bg-card border border-base rounded-2xl p-4 text-sm text-primary placeholder:text-slate-300 focus:ring-4 focus:ring-slate-900/5 focus:border-slate-900 transition-all font-medium"
-                    value={editedTask.coverImage || ""}
-                    onChange={(e) => patch({ coverImage: e.target.value })}
-                    placeholder="Enter image URL (e.g. https://...)"
-                  />
-                  {editedTask.coverImage && (
-                    <div className="relative group rounded-2xl overflow-hidden border border-base max-h-48 shadow-sm">
-                      <img src={editedTask.coverImage} className="w-full h-full object-cover" alt="Cover preview" />
-                      <button 
-                        onClick={() => patch({ coverImage: "" })}
-                        className="absolute top-2 right-2 p-1.5 bg-rose-500 text-white rounded-lg opacity-0 group-hover:opacity-100 transition-all shadow-lg"
-                      >
-                         <X size={14} />
-                      </button>
-                    </div>
-                  )}
-                </section> */}
+
 
                 <section className="space-y-4">
                   <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest flex items-center gap-2">
@@ -265,7 +255,7 @@ export default function TaskModal({ task, onClose, onUpdate, users = [], project
 
                 <section className="space-y-4">
                   <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest flex items-center gap-2">
-                    <Paperclip size={14} /> Attachments
+                    <Paperclip className="w-3.5 h-3.5" /> Attachments
                   </h4>
                   <div className="bg-card border border-base rounded-2xl p-6 shadow-sm">
                     <TaskAttachments
@@ -297,7 +287,7 @@ export default function TaskModal({ task, onClose, onUpdate, users = [], project
                           className={`w-full flex items-center gap-4 p-4 rounded-xl border transition-all text-left ${item.completed ? 'bg-main border-base opacity-60' : 'bg-card border-base hover:border-slate-300 shadow-sm'}`}
                       >
                           <div className={`shrink-0 ${item.completed ? 'text-emerald-500' : 'text-slate-300'}`}>
-                              {item.completed ? <CheckCircle2 size={20} /> : <Circle size={20} />}
+                              {item.completed ? <CheckCircleIconSolidInner className="w-5 h-5" /> : <div className="w-5 h-5 rounded-full border-2 border-current" />}
                           </div>
                           <p className={`text-sm font-semibold ${item.completed ? 'text-slate-400 line-through' : 'text-slate-800'}`}>{item.text}</p>
                       </button>
@@ -320,12 +310,12 @@ export default function TaskModal({ task, onClose, onUpdate, users = [], project
 
             {activeTab === "activity" && (
               <div className="max-w-3xl mx-auto space-y-8 px-4">
-                 <div className="relative pl-8 space-y-8 before:absolute before:left-[15px] before:top-2 before:bottom-2 before:w-[2px] before:bg-slate-100">
-                    {(editedTask.activityLog || task.activityLog || []).length > 0 ? (
-                      [...(editedTask.activityLog || task.activityLog || [])].reverse().map((log, i) => (
+                  <div className="relative pl-8 space-y-8 before:absolute before:left-[15px] before:top-2 before:bottom-2 before:w-[2px] before:bg-slate-100">
+                    {(editedTask.activity || task.activity || []).length > 0 ? (
+                      [...(editedTask.activity || task.activity || [])].reverse().map((log, i) => (
                         <div key={i} className="relative">
                            <div className="absolute -left-[23px] top-1 w-4 h-4 rounded-full bg-white border-2 border-slate-900 z-10 flex items-center justify-center">
-                              <History size={8} className="text-slate-900" />
+                              <RotateCw className="w-2.5 h-2.5 text-slate-900" />
                            </div>
                            <div className="space-y-1">
                               <div className="flex items-center gap-2">
@@ -339,7 +329,7 @@ export default function TaskModal({ task, onClose, onUpdate, users = [], project
                       ))
                     ) : (
                       <div className="py-12 flex flex-col items-center justify-center text-center opacity-30">
-                        <ActivityIcon size={32} />
+                        <BarChart2 className="w-8 h-8" />
                         <p className="text-[10px] font-black uppercase tracking-widest mt-3">No activity logged yet</p>
                       </div>
                     )}
@@ -378,7 +368,7 @@ export default function TaskModal({ task, onClose, onUpdate, users = [], project
                             onClick={handleAddComment}
                             className="flex items-center gap-2 px-6 py-3 bg-slate-900 text-white rounded-xl font-bold text-xs uppercase tracking-widest shadow-md"
                         >
-                            <Send size={14} />
+                            <Send className="w-4 h-4" />
                             <span>Post</span>
                         </button>
                     </div>
@@ -399,7 +389,7 @@ export default function TaskModal({ task, onClose, onUpdate, users = [], project
                             className={`flex items-center justify-between p-3 rounded-xl text-xs font-bold border transition-all ${editedTask.status === s ? `bg-slate-900 text-white border-slate-900 dark:bg-indigo-600 dark:border-indigo-600 shadow-md` : 'text-secondary bg-main border-base hover:border-slate-300'}`}
                         >
                             <span>{cfg.label}</span>
-                            {editedTask.status === s && <CheckCircle2 size={14} className="text-emerald-400" />}
+                            {editedTask.status === s && <CheckCircleIconSolidInner className="w-4 h-4 text-emerald-400" />}
                         </button>
                     ))}
                 </div>
@@ -407,7 +397,7 @@ export default function TaskModal({ task, onClose, onUpdate, users = [], project
 
               <div className="space-y-4">
                 <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest px-1 flex items-center gap-2">
-                  <Tag size={12} className="text-rose-500" />
+                  <Tag className="w-3.5 h-3.5 text-rose-500" />
                   Labels
                 </p>
                 <div className="flex flex-wrap gap-1.5 px-1">
@@ -418,12 +408,12 @@ export default function TaskModal({ task, onClose, onUpdate, users = [], project
                         style={{ backgroundColor: label.color }}
                       >
                          <span>{label.text || ""}</span>
-                         <button onClick={() => patch({ labels: editedTask.labels.filter((_, i) => i !== idx) })} className="hover:scale-110"><X size={10} /></button>
+                         <button onClick={() => patch({ labels: editedTask.labels.filter((_, i) => i !== idx) })} className="hover:scale-110"><X className="w-3 h-3" /></button>
                       </div>
                    ))}
                    <div className="relative group/label">
                       <button className="h-8 w-8 rounded-lg bg-slate-100 text-slate-400 flex items-center justify-center hover:bg-slate-200 transition-all">
-                         <Plus size={14} />
+                         <Plus className="w-4 h-4" />
                       </button>
                       <div className="absolute top-full right-0 mt-2 p-3 bg-white border border-base rounded-xl shadow-2xl z-[70] hidden group-hover/label:grid grid-cols-5 gap-2 w-48 animate-in fade-in slide-in-from-top-1 duration-200">
                          {LABEL_COLORS.map((c) => (
@@ -472,7 +462,7 @@ export default function TaskModal({ task, onClose, onUpdate, users = [], project
                         }}
                         onFocus={() => setShowAssigneeDropdown(true)}
                       />
-                      <User size={14} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+                      <User className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none w-4 h-4" />
                    </div>
 
                    {showAssigneeDropdown && (
@@ -486,7 +476,7 @@ export default function TaskModal({ task, onClose, onUpdate, users = [], project
                                setShowAssigneeDropdown(false);
                              }}
                            >
-                             <X size={12} /> No assignee
+                             <X className="w-3.5 h-3.5" /> No assignee
                            </button>
 
                            {/* Existing Users */}
@@ -560,7 +550,7 @@ export default function TaskModal({ task, onClose, onUpdate, users = [], project
                             <option key={p._id} value={p._id}>{p.name}</option>
                         ))}
                     </select>
-                    <Folder size={14} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+                    <Folder className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none w-4 h-4" />
                 </div>
              </div>
 
@@ -573,7 +563,7 @@ export default function TaskModal({ task, onClose, onUpdate, users = [], project
                         value={editedTask.dueDate ? editedTask.dueDate.split("T")[0] : ""}
                         onChange={(e) => patch({ dueDate: e.target.value })}
                     />
-                    <Calendar size={14} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+                    <Calendar className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none w-4 h-4" />
                 </div>
              </div>
           </aside>
@@ -587,7 +577,7 @@ export default function TaskModal({ task, onClose, onUpdate, users = [], project
               onClick={handleArchive}
               disabled={loading}
             >
-              <History size={14} />
+              <RotateCw className="w-4 h-4" />
               <span>Archive</span>
             </button>
             <button 
@@ -595,7 +585,7 @@ export default function TaskModal({ task, onClose, onUpdate, users = [], project
               onClick={handleDelete}
               disabled={loading || !task?._id}
             >
-              <Trash2 size={14} />
+              <Trash2 className="w-4 h-4" />
               <span>Delete</span>
             </button>
           </div>
@@ -609,7 +599,7 @@ export default function TaskModal({ task, onClose, onUpdate, users = [], project
                 onClick={handleSave}
                 disabled={loading || saved || !editedTask.title?.trim()}
             >
-                {saved ? <CheckCircle2 size={14} /> : <Save size={14} />}
+                {saved ? <CheckCircleIconSolidInner className="w-4 h-4 text-emerald-400" /> : <SaveIcon className="w-4 h-4" />}
                 {loading ? (task?._id ? "Syncing..." : "Creating...") : saved ? "Synced!" : (task?._id ? "Save changes" : "Create Task")}
             </button>
           </div>
