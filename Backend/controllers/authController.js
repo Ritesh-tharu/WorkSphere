@@ -1,8 +1,8 @@
-// Backend/controllers/authController.js
 const User = require("../models/User");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const { OAuth2Client } = require("google-auth-library");
+const { sendOTPEmail } = require("../services/emailService");
 const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 
 // Generate JWT
@@ -38,20 +38,87 @@ const registerUser = async (req, res) => {
     const salt = await bcrypt.genSalt(10);
     const hashedPassword = await bcrypt.hash(password, salt);
 
+    // Generate 6-digit OTP
+    const otp = Math.floor(100000 + Math.random() * 900000).toString();
+    const otpExpires = Date.now() + 10 * 60 * 1000; // 10 minutes
+
     const user = await User.create({
       name,
       email,
       password: hashedPassword,
       phoneNumber,
+      otp,
+      otpExpires,
+      isVerified: false,
     });
 
+    // Send OTP Email
+    await sendOTPEmail(email, otp);
+
     res.status(201).json({
-      _id: user._id,
-      name: user.name,
+      message: "Registration successful. Please check your email for the verification code.",
       email: user.email,
-      phoneNumber: user.phoneNumber,
-      token: generateToken(user._id),
     });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+// ================= VERIFY OTP =================
+const verifyOTP = async (req, res) => {
+  const { email, otp } = req.body;
+
+  try {
+    const user = await User.findOne({ email });
+
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    if (user.isVerified) {
+      return res.status(400).json({ message: "User is already verified" });
+    }
+
+    if (user.otp !== otp || user.otpExpires < Date.now()) {
+      return res.status(400).json({ message: "Invalid or expired OTP" });
+    }
+
+    user.isVerified = true;
+    user.otp = undefined;
+    user.otpExpires = undefined;
+    await user.save();
+
+    res.json({ message: "Account verified successfully. You can now log in." });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+// ================= RESEND OTP =================
+const resendOTP = async (req, res) => {
+  const { email } = req.body;
+
+  try {
+    const user = await User.findOne({ email });
+
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    if (user.isVerified) {
+      return res.status(400).json({ message: "User is already verified" });
+    }
+
+    // Generate new OTP
+    const otp = Math.floor(100000 + Math.random() * 900000).toString();
+    user.otp = otp;
+    user.otpExpires = Date.now() + 10 * 60 * 1000; // 10 minutes
+    await user.save();
+
+    // Send OTP Email
+    await sendOTPEmail(email, otp);
+
+    res.json({ message: "A new verification code has been sent to your email." });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
@@ -65,6 +132,10 @@ const loginUser = async (req, res) => {
     const user = await User.findOne({ email });
 
     if (user && (await bcrypt.compare(password, user.password))) {
+      if (!user.isVerified) {
+        return res.status(401).json({ message: "Please verify your email to log in." });
+      }
+
       res.json({
         _id: user._id,
         name: user.name,
@@ -212,16 +283,54 @@ const googleLogin = async (req, res) => {
 
     let user = await User.findOne({ email });
     if (!user) {
+      // New user signup via Google
+      const otp = Math.floor(100000 + Math.random() * 900000).toString();
+      const otpExpires = Date.now() + 10 * 60 * 1000;
+
       user = await User.create({
         name,
         email,
         googleId: sub,
         profilePhoto: picture,
+        otp,
+        otpExpires,
+        isVerified: false,
       });
-    } else if (!user.googleId) {
-      user.googleId = sub;
-      if (picture && !user.profilePhoto) user.profilePhoto = picture;
-      await user.save();
+
+      await sendOTPEmail(email, otp);
+
+      return res.json({
+        requiresVerification: true,
+        email: user.email,
+        message: "Google account connected. Please verify your email with the code sent to your inbox.",
+      });
+    } else {
+      // User exists - check verification status
+      if (!user.isVerified) {
+        const otp = Math.floor(100000 + Math.random() * 900000).toString();
+        user.otp = otp;
+        user.otpExpires = Date.now() + 10 * 60 * 1000;
+        
+        // Link googleId if not already present
+        if (!user.googleId) user.googleId = sub;
+        if (picture && !user.profilePhoto) user.profilePhoto = picture;
+        
+        await user.save();
+        await sendOTPEmail(email, otp);
+
+        return res.json({
+          requiresVerification: true,
+          email: user.email,
+          message: "Please complete your account verification. A code has been sent to your email.",
+        });
+      }
+
+      // Existing verified user
+      if (!user.googleId) {
+        user.googleId = sub;
+        if (picture && !user.profilePhoto) user.profilePhoto = picture;
+        await user.save();
+      }
     }
 
     res.json({
@@ -242,4 +351,4 @@ const googleLogin = async (req, res) => {
   }
 };
 
-module.exports = { registerUser, loginUser, updateProfile, changePassword, googleLogin };
+module.exports = { registerUser, verifyOTP, resendOTP, loginUser, updateProfile, changePassword, googleLogin };

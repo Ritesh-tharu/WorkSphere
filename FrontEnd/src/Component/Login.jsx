@@ -29,6 +29,10 @@ const Login = () => {
       });
       const data = await response.json();
       if (response.ok) {
+        if (data.requiresVerification) {
+          navigate("/verify-otp", { state: { email: data.email } });
+          return;
+        }
         localStorage.setItem("token", data.token);
         localStorage.setItem("user", JSON.stringify(data));
         navigate("/dashboard");

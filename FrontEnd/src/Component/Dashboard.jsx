@@ -43,7 +43,7 @@ const Dashboard = () => {
     email: "",
     profilePhoto: "",
   });
-  const [activeView, setActiveView] = useState("dashboard"); // The Workspace Hub
+  const [activeView, setActiveView] = useState("dashboard"); 
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [projects, setProjects] = useState([]);
   const [unreadCount, setUnreadCount] = useState(0);
@@ -55,6 +55,8 @@ const Dashboard = () => {
   const [showTaskModal, setShowTaskModal] = useState(false);
   const [calendarKey, setCalendarKey] = useState(0);
   const [globalSearch, setGlobalSearch] = useState("");
+  const [globalSearchResults, setGlobalSearchResults] = useState([]);
+  const [searchLoading, setSearchLoading] = useState(false);
 
   useEffect(() => {
     // Global Keyboard Shortcuts (CMD+K / CTRL+K for search)
@@ -96,6 +98,33 @@ const Dashboard = () => {
     }
     fetchDashboardInitialData();
   }, []);
+
+  useEffect(() => {
+    if (!globalSearch.trim()) {
+      setGlobalSearchResults([]);
+      return;
+    }
+
+    const delayDebounce = setTimeout(() => {
+      fetchGlobalSearchResults();
+    }, 500);
+
+    return () => clearTimeout(delayDebounce);
+  }, [globalSearch]);
+
+  const fetchGlobalSearchResults = async () => {
+    try {
+      setSearchLoading(true);
+      const res = await axios.get(`http://localhost:5000/api/tasks/search?search=${globalSearch}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      setGlobalSearchResults(res.data);
+    } catch (error) {
+      console.error("Error fetching global search results:", error);
+    } finally {
+      setSearchLoading(false);
+    }
+  };
 
   const fetchDashboardInitialData = async () => {
     try {
@@ -353,10 +382,6 @@ const Dashboard = () => {
                 className="w-full bg-main border border-base rounded-2xl pl-12 pr-12 py-2 text-sm text-primary placeholder:text-secondary focus:ring-4 focus:ring-indigo-500/5 focus:border-indigo-500 outline-none transition-all"
                 value={globalSearch}
                 onChange={(e) => setGlobalSearch(e.target.value)}
-                onFocus={() => {
-                  if (activeView !== "boards" && activeView !== "tasks")
-                    setActiveView("boards");
-                }}
               />
               <div className="absolute right-4 top-1/2 -translate-y-1/2 flex items-center gap-1 px-1.5 py-0.5 bg-main border border-base rounded text-[10px] font-black text-secondary uppercase tracking-widest opacity-60 pointer-events-none group-focus-within:hidden">
                 <CommandLineIcon className="w-3 h-3" />
@@ -369,6 +394,56 @@ const Dashboard = () => {
         <div className="flex-1 overflow-auto custom-scrollbar">
           {activeView === "dashboard" && (
             <div className="max-w-6xl mx-auto p-12 space-y-12 animate-in fade-in slide-in-from-bottom-4 duration-700">
+              
+              {/* SEARCH RESULTS SECTION */}
+              {globalSearch.trim() && (
+                <div className="space-y-6 animate-in slide-in-from-top-4 duration-500">
+                   <div className="flex items-center justify-between">
+                      <h2 className="text-xs font-black uppercase tracking-[0.2em] text-indigo-600 flex items-center gap-2">
+                         {searchLoading ? (
+                           <div className="w-3 h-3 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin" />
+                         ) : (
+                           <MagnifyingGlassIcon className="w-4 h-4" />
+                         )}
+                         Search Results ({globalSearchResults.length})
+                      </h2>
+                      <button onClick={() => setGlobalSearch("")} className="text-[10px] font-black text-secondary hover:text-primary uppercase tracking-widest">
+                        Clear results
+                      </button>
+                   </div>
+                   
+                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      {globalSearchResults.map(task => (
+                        <div 
+                          key={task._id}
+                          onClick={() => {
+                            setSelectedTask(task);
+                            setShowTaskModal(true);
+                          }}
+                          className="bg-card p-4 rounded-xl border border-indigo-500/20 hover:border-indigo-500 transition-all cursor-pointer group flex items-center justify-between"
+                        >
+                           <div className="flex items-center gap-4">
+                              <div className={`w-2 h-2 rounded-full ${task.status === 'completed' ? 'bg-emerald-500' : 'bg-amber-500'}`} />
+                              <div>
+                                 <p className="text-sm font-bold text-primary group-hover:text-indigo-600 transition-colors uppercase tracking-tight">{task.title}</p>
+                                 <p className="text-[10px] text-secondary font-bold opacity-60">
+                                   {projects.find(p => p._id === task.project)?.name || "Global Workspace"} • {task.status.toUpperCase()}
+                                 </p>
+                              </div>
+                           </div>
+                           <ChevronRight className="w-4 h-4 text-secondary opacity-0 group-hover:opacity-100 transition-all" />
+                        </div>
+                      ))}
+                      {globalSearchResults.length === 0 && !searchLoading && (
+                        <div className="col-span-full py-8 text-center bg-slate-50 dark:bg-slate-900 border border-dashed border-base rounded-2xl">
+                           <p className="text-xs font-bold text-secondary uppercase tracking-widest">No matching tasks found</p>
+                        </div>
+                      )}
+                   </div>
+                   <div className="h-[1px] bg-base w-full" />
+                </div>
+              )}
+
               <div className="space-y-2">
                 <h1 className="text-4xl font-black text-primary tracking-tighter">
                   {(() => {

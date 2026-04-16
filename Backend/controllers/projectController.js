@@ -2,6 +2,8 @@ const Project = require("../models/Project");
 const Task = require("../models/Task");
 const User = require("../models/User");
 const Notification = require("../models/Notification");
+const Note = require("../models/Note");
+const CalendarEvent = require("../models/CalendarEvent");
 const mongoose = require("mongoose");
 
 // Get all projects for user
@@ -177,13 +179,33 @@ exports.deleteProject = async (req, res) => {
         .json({ message: "Project not found or unauthorized" });
     }
 
-    // Delete all associated tasks
-    await Task.deleteMany({ project: id });
+    // 1. Find all task IDs for this project to delete related notifications/events
+    const taskIds = await Task.find({ project: id }).distinct("_id");
 
-    // Delete project
+    // 2. Delete all associated entities
+    await Promise.all([
+      Task.deleteMany({ project: id }),
+      Note.deleteMany({ project: id }),
+      CalendarEvent.deleteMany({ 
+        $or: [
+          { project: id },
+          { task: { $in: taskIds } }
+        ]
+      }),
+      Notification.deleteMany({
+        $or: [
+          { "metadata.projectId": id },
+          { "metadata.projectId": id.toString() },
+          { "metadata.taskId": { $in: taskIds } },
+          { "metadata.taskId": { $in: taskIds.map(tid => tid.toString()) } }
+        ]
+      })
+    ]);
+
+    // 3. Delete project itself
     await project.deleteOne();
 
-    res.json({ message: "Project and all associated tasks deleted" });
+    res.json({ message: "Project and all associated data (tasks, notes, events, notifications) deleted successfully" });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }

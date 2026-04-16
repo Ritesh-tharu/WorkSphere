@@ -3,6 +3,7 @@ const User = require("../models/User");
 const Notification = require("../models/Notification");
 const Invitation = require("../models/Invitation");
 const Project = require("../models/Project");
+const CalendarEvent = require("../models/CalendarEvent");
 const { sendInvitationEmail } = require("../config/emailService");
 const crypto = require("crypto");
 const mongoose = require("mongoose");
@@ -397,9 +398,21 @@ exports.deleteTask = async (req, res) => {
       return res.status(404).json({ message: "Task not found" });
     }
 
+    // 1. Delete associated entities
+    await Promise.all([
+      CalendarEvent.deleteMany({ task: id }),
+      Notification.deleteMany({
+        $or: [
+          { "metadata.taskId": id },
+          { "metadata.taskId": id.toString() }
+        ]
+      })
+    ]);
+
+    // 2. Delete task itself
     await task.deleteOne();
 
-    res.json({ message: "Task deleted successfully" });
+    res.json({ message: "Task and all associated data (events, notifications) deleted successfully" });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }

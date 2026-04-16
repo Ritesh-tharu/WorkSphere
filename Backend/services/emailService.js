@@ -97,6 +97,60 @@ const sendInvitationEmail = async (email, token, inviterName) => {
   }
 };
 
+const sendOTPEmail = async (email, otp) => {
+  try {
+    const mailOptions = {
+      from: `"WorkSphere Support" <${process.env.EMAIL_USER}>`,
+      to: email,
+      subject: "Verify Your WorkSphere Account",
+      html: `
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <meta charset="UTF-8">
+          <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        </head>
+        <body style="margin: 0; padding: 0; font-family: 'Inter', sans-serif; background-color: #f8fafc;">
+          <div style="max-width: 600px; margin: 40px auto; background: white; border-radius: 24px; overflow: hidden; box-shadow: 0 4px 20px rgba(0,0,0,0.05); border: 1px solid #e2e8f0;">
+            <div style="background: #0f172a; padding: 40px; text-align: center;">
+              <h1 style="color: white; margin: 0; font-size: 24px; font-weight: 800; letter-spacing: -0.025em; text-transform: uppercase;">WorkSphere</h1>
+            </div>
+            
+            <div style="padding: 40px 50px;">
+              <h2 style="color: #0f172a; font-size: 20px; font-weight: 700; margin: 0 0 16px 0;">Verify your email</h2>
+              <p style="color: #64748b; font-size: 15px; line-height: 24px; margin: 0 0 32px 0;">
+                Thanks for joining WorkSphere! To complete your registration, please use the following 6-digit verification code:
+              </p>
+              
+              <div style="background: #f1f5f9; border-radius: 16px; padding: 24px; text-align: center; margin-bottom: 32px;">
+                <span style="font-family: 'Monaco', monospace; font-size: 32px; font-weight: 800; color: #0f172a; letter-spacing: 0.25em;">${otp}</span>
+              </div>
+              
+              <p style="color: #94a3b8; font-size: 13px; margin: 0;">
+                This code will expire in 10 minutes. If you didn't request this, you can safely ignore this email.
+              </p>
+            </div>
+            
+            <div style="padding: 24px 40px; border-top: 1px solid #f1f5f9; text-align: center; background: #fafafa;">
+              <p style="color: #94a3b8; font-size: 11px; margin: 0; text-transform: uppercase; letter-spacing: 0.05em; font-weight: 700;">
+                Unified Workspace Management
+              </p>
+            </div>
+          </div>
+        </body>
+        </html>
+      `,
+    };
+
+    const info = await transporter.sendMail(mailOptions);
+    console.log("OTP email sent:", info.messageId);
+    return true;
+  } catch (error) {
+    console.error("Error sending OTP email:", error);
+    throw error;
+  }
+};
+
 // Test email configuration
 const testEmailConfig = () => {
   const requiredEnvVars = ["EMAIL_USER", "EMAIL_PASS"];
@@ -111,4 +165,4 @@ const testEmailConfig = () => {
   return true;
 };
 
-module.exports = { sendInvitationEmail, testEmailConfig };
+module.exports = { sendInvitationEmail, sendOTPEmail, testEmailConfig };

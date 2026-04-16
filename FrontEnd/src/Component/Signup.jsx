@@ -129,6 +129,11 @@ const Signup = () => {
       });
       const data = await response.json();
       if (response.ok) {
+        if (data.requiresVerification) {
+          setSuccess(true);
+          setTimeout(() => navigate("/verify-otp", { state: { email: data.email } }), 1500);
+          return;
+        }
         localStorage.setItem("token", data.token);
         localStorage.setItem("user", JSON.stringify(data));
         setSuccess(true);
@@ -173,7 +178,7 @@ const Signup = () => {
       const data = await response.json();
       if (response.ok) {
         setSuccess(true);
-        setTimeout(() => navigate("/login"), 2000);
+        setTimeout(() => navigate("/verify-otp", { state: { email: formData.email } }), 2000);
       } else {
         setSubmitError(data.message || "Registration failed. Please check your details.");
       }
@@ -201,7 +206,7 @@ const Signup = () => {
             <CheckCircle2 className="text-emerald-500" size={40} />
           </div>
           <h2 className="text-2xl font-bold text-slate-900">Welcome to WorkSphere</h2>
-          <p className="text-slate-500">Your account has been successfully created. Redirecting you to the workspace terminal...</p>
+          <p className="text-slate-500">Your account has been successfully created. Redirecting you to the verification gateway...</p>
         </div>
       </div>
     );
@@ -293,7 +298,7 @@ const Signup = () => {
 
               {/* Email */}
               <div className="space-y-1.5">
-                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Business Email</label>
+                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Your Email</label>
                 <div className="relative group">
                   <Mail className={`absolute left-4 top-1/2 -translate-y-1/2 transition-colors ${errors.email ? 'text-rose-400' : 'text-slate-300 group-focus-within:text-slate-900'}`} size={16} />
                   <input 

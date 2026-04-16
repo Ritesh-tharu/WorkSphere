@@ -14,6 +14,7 @@ import Dashboard from "./Component/Dashboard";
 import TaskBoard from "./Component/TaskBoard";
 import Settings from "./Component/Settings";
 import AcceptInvite from "./Component/AcceptInvite";
+import VerifyOTP from "./Component/VerifyOTP";
 import ProtectedRoute from "./Component/ProtectedRoute";
 import "./App.css";
 
@@ -31,6 +32,7 @@ function App() {
           <Route path="/" element={<Landing />} />
           <Route path="/login" element={<Login />} />
           <Route path="/signup" element={<Signup />} />
+          <Route path="/verify-otp" element={<VerifyOTP />} />
 
           {/* Private Routes (Protected) */}
           <Route element={<ProtectedRoute />}>

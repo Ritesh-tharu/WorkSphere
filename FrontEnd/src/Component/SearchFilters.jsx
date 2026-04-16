@@ -57,11 +57,12 @@ const SearchFilters = ({ onSearchResults, initialFilters = {}, globalSearch }) =
     }
   }, [initialFilters.project]);
 
-  useEffect(() => {
-    if (globalSearch !== undefined) {
-      setSearchTerm(globalSearch);
-    }
-  }, [globalSearch]);
+  // Remove automatic sync from global search to avoid side effects on the board when searching from other views
+  // useEffect(() => {
+  //   if (globalSearch !== undefined) {
+  //     setSearchTerm(globalSearch);
+  //   }
+  // }, [globalSearch]);
 
   useEffect(() => {
     const delayDebounce = setTimeout(() => performSearch(), 500);
