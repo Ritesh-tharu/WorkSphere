@@ -25,6 +25,7 @@ import {
   CheckCircleIcon as CheckCircleIconSolidInner,
   ArrowDownOnSquareIcon as SaveIcon,
 } from "@heroicons/react/24/solid";
+import { DragDropContext, Droppable, Draggable } from "@hello-pangea/dnd";
 import TaskAttachments from "./TaskAttachments";
 
 const PRIORITY_CONFIG = {
@@ -86,6 +87,7 @@ export default function TaskModal({
   const [loading, setLoading] = useState(false);
   const [assigneeSearch, setAssigneeSearch] = useState("");
   const [showAssigneeDropdown, setShowAssigneeDropdown] = useState(false);
+  const [showLabelPicker, setShowLabelPicker] = useState(false);
 
   const getHeaders = () => ({
     headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
@@ -137,7 +139,13 @@ export default function TaskModal({
       }, 800);
     } catch (err) {
       console.error("Save failed:", err);
-      alert(task?._id ? "Update failed." : "Creation failed.");
+      if (err.response && err.response.status === 403 && err.response.data.isLimitReached) {
+        if (window.confirm(err.response.data.message + " \n\nWould you like to upgrade to Premium?")) {
+          window.location.href = "/pricing";
+        }
+      } else {
+        alert(task?._id ? "Update failed." : "Creation failed.");
+      }
     } finally {
       setLoading(false);
     }
@@ -204,6 +212,11 @@ export default function TaskModal({
       const newCheck = (editedTask.checklist || []).map((i) =>
         i._id === itemId ? data : i,
       );
+      
+      // Prevent manual toggle for milestone items if they match status names
+      // But for now, we'll allow it if they want, but we should probably inform them.
+      // Actually, per plan, I'll make it system-driven.
+      
       patch({ checklist: newCheck });
       if (onUpdate) onUpdate();
     } catch (err) {
@@ -228,12 +241,13 @@ export default function TaskModal({
     }
   };
 
-  const checklist = editedTask.checklist || [];
-  const progress = checklist.length
-    ? Math.round(
-        (checklist.filter((i) => i.completed).length / checklist.length) * 100,
-      )
-    : 0;
+  const checklist = ["to-do", "doing", "done"];
+  const progress =
+    editedTask.status === "completed"
+      ? 100
+      : editedTask.status === "doing"
+        ? 50
+        : 0;
 
   const statusCfg = STATUS_CONFIG[editedTask.status] || STATUS_CONFIG.todo;
   const priorityCfg =
@@ -288,11 +302,6 @@ export default function TaskModal({
             >
               <Icon className="w-4 h-4" />
               <span>{label}</span>
-              {id === "checklist" && checklist.length > 0 && (
-                <span className="text-[10px] font-bold bg-slate-100 text-slate-500 px-1.5 py-0.5 rounded-full border border-slate-200 ml-1">
-                  {checklist.length}
-                </span>
-              )}
             </button>
           ))}
         </nav>
@@ -345,49 +354,6 @@ export default function TaskModal({
                       className="h-full bg-slate-900 transition-all duration-700 ease-out"
                       style={{ width: `${progress}%` }}
                     />
-                  </div>
-
-                  <div className="space-y-2 pt-4">
-                    {checklist.map((item) => (
-                      <button
-                        key={item._id}
-                        onClick={() => handleToggle(item._id)}
-                        className={`w-full flex items-center gap-4 p-4 rounded-xl border transition-all text-left ${item.completed ? "bg-main border-base opacity-60" : "bg-card border-base hover:border-slate-300 shadow-sm"}`}
-                      >
-                        <div
-                          className={`shrink-0 ${item.completed ? "text-emerald-500" : "text-slate-300"}`}
-                        >
-                          {item.completed ? (
-                            <CheckCircleIconSolidInner className="w-5 h-5" />
-                          ) : (
-                            <div className="w-5 h-5 rounded-full border-2 border-current" />
-                          )}
-                        </div>
-                        <p
-                          className={`text-sm font-semibold ${item.completed ? "text-slate-400 line-through" : "text-slate-800"}`}
-                        >
-                          {item.text}
-                        </p>
-                      </button>
-                    ))}
-                  </div>
-
-                  <div className="flex gap-2 pt-4">
-                    <input
-                      className="flex-1 bg-main border border-base rounded-xl px-4 py-3 text-sm text-primary focus:ring-2 focus:ring-slate-900/5 focus:border-slate-900 outline-none transition-all"
-                      placeholder="Add new steps to complete the task..."
-                      value={newCheckItem}
-                      onChange={(e) => setNewCheckItem(e.target.value)}
-                      onKeyDown={(e) =>
-                        e.key === "Enter" && handleAddCheckItem()
-                      }
-                    />
-                    <button
-                      onClick={handleAddCheckItem}
-                      className="px-5 py-3 bg-slate-900 text-white rounded-xl font-bold text-xs uppercase tracking-widest shadow-md"
-                    >
-                      Add
-                    </button>
                   </div>
                 </div>
               </div>
@@ -486,7 +452,8 @@ export default function TaskModal({
           </div>
 
           {/* Configuration Sidebar */}
-          <aside className="w-full lg:w-80 p-8 bg-card border-l border-base space-y-8 overflow-visible overflow-y-auto no-scrollbar">
+          <aside className="w-full lg:w-80 bg-card border-l border-base flex flex-col overflow-visible">
+            <div className="flex-1 p-8 space-y-8 overflow-y-auto no-scrollbar overflow-x-visible">
             <div className="space-y-4">
               <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest px-1 text-sky-600">
                 Current Status
@@ -516,7 +483,7 @@ export default function TaskModal({
                 {(editedTask.labels || []).map((label, idx) => (
                   <div
                     key={idx}
-                    className="h-8 px-3 rounded-lg flex items-center gap-2 border border-black/5 shadow-sm text-[10px] font-black text-white"
+                    className="h-8 px-3 rounded-lg flex items-center gap-2 border border-black/5 shadow-sm text-[10px] font-black text-white hover:brightness-110 active:scale-95 transition-all cursor-default"
                     style={{ backgroundColor: label.color }}
                   >
                     <span>{label.text || ""}</span>
@@ -526,36 +493,50 @@ export default function TaskModal({
                           labels: editedTask.labels.filter((_, i) => i !== idx),
                         })
                       }
-                      className="hover:scale-110"
+                      className="hover:scale-110 transition-transform"
                     >
                       <X className="w-3 h-3" />
                     </button>
                   </div>
                 ))}
-                <div className="relative group/label">
-                  <button className="h-8 w-8 rounded-lg bg-slate-100 text-slate-400 flex items-center justify-center hover:bg-slate-200 transition-all">
-                    <Plus className="w-4 h-4" />
-                  </button>
-                  <div className="absolute top-full right-0 mt-2 p-3 bg-white border border-base rounded-xl shadow-2xl z-[1000] hidden group-hover/label:grid grid-cols-5 gap-2 w-48 animate-in fade-in slide-in-from-top-1 duration-200">
-                    {LABEL_COLORS.map((c) => (
-                      <button
-                        key={c.name}
-                        className="w-6 h-6 rounded-md border border-black/5 hover:scale-110 transition-transform"
-                        style={{ backgroundColor: c.color }}
-                        onClick={() => {
-                          const labelText =
-                            prompt("Label text (optional):") || "";
-                          patch({
-                            labels: [
-                              ...(editedTask.labels || []),
-                              { color: c.color, text: labelText },
-                            ],
-                          });
-                        }}
-                      />
-                    ))}
+                <div className="relative">
+                    <button 
+                      onClick={() => setShowLabelPicker(!showLabelPicker)}
+                      className="h-8 w-8 rounded-lg bg-slate-100 text-slate-400 flex items-center justify-center hover:bg-slate-200 hover:text-indigo-600 transition-all shadow-sm border border-slate-200"
+                    >
+                      <Plus className="w-4 h-4" />
+                    </button>
+                    {showLabelPicker && (
+                      <>
+                        <div className="fixed inset-0 z-[1000]" onClick={() => setShowLabelPicker(false)} />
+                        <div className="absolute top-full left-0 mt-2 p-4 bg-white border border-slate-200 rounded-2xl shadow-2xl z-[1001] grid grid-cols-5 gap-2 w-56 animate-in fade-in slide-in-from-top-2 duration-200">
+                          <div className="col-span-5 mb-2 pb-2 border-b border-slate-100 flex items-center justify-between">
+                             <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Select Color</span>
+                             <button onClick={() => setShowLabelPicker(false)}><X className="w-3 h-3 text-slate-400 hover:text-slate-900" /></button>
+                          </div>
+                          {LABEL_COLORS.map((c) => (
+                            <button
+                              key={c.name}
+                              className="w-full aspect-square rounded-lg border border-black/5 hover:scale-110 transition-transform shadow-sm relative group"
+                              style={{ backgroundColor: c.color }}
+                              onClick={() => {
+                                const labelText = prompt("Label title (optional):") || "";
+                                patch({
+                                  labels: [
+                                    ...(editedTask.labels || []),
+                                    { color: c.color, text: labelText },
+                                  ],
+                                });
+                                setShowLabelPicker(false);
+                              }}
+                            >
+                               <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors rounded-lg" />
+                            </button>
+                          ))}
+                        </div>
+                      </>
+                    )}
                   </div>
-                </div>
               </div>
             </div>
 
@@ -760,6 +741,7 @@ export default function TaskModal({
                 />
                 <Calendar className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none w-4 h-4" />
               </div>
+            </div>
             </div>
           </aside>
         </div>

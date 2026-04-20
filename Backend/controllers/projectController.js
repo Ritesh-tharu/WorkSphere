@@ -109,6 +109,18 @@ exports.createProject = async (req, res) => {
     const { name, description, color, startDate, dueDate, teamMembers } =
       req.body;
 
+    // Check project limit for free users
+    const user = await User.findById(req.user.id);
+    if (user.plan === "free") {
+      const projectCount = await Project.countDocuments({ owner: req.user.id });
+      if (projectCount >= 3) {
+        return res.status(403).json({
+          message: "Project limit reached. Free users can only create 3 projects.",
+          isLimitReached: true,
+        });
+      }
+    }
+
     const project = new Project({
       name,
       description,
@@ -225,6 +237,15 @@ exports.addTeamMember = async (req, res) => {
 
     if (project.teamMembers.includes(userId)) {
       return res.status(400).json({ message: "User already in project" });
+    }
+
+    // Check team member limit for free users
+    const owner = await User.findById(project.owner);
+    if (owner.plan === "free" && project.teamMembers.length >= 5) {
+      return res.status(403).json({
+        message: "Team member limit reached for this project (max 5 for free users).",
+        isLimitReached: true,
+      });
     }
 
     project.teamMembers.push(userId);

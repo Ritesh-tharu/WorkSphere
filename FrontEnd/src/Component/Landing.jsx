@@ -66,8 +66,12 @@ const Landing = () => {
 
             {/* Desktop Nav */}
             <div className="hidden md:flex items-center gap-10">
-              {["Home", "Features", "Policy", "Terms & Condition", "Contact"].map((item) => (
-                <a key={item} href={`#${item.toLowerCase().replace(/ & /g, "-").replace(/ /g, "-")}`} className="text-sm font-bold text-slate-500 hover:text-indigo-600 transition-colors uppercase tracking-widest">{item}</a>
+              {["Home", "Features", "Pricing", "Policy", "Terms & Condition", "Contact"].map((item) => (
+                item === "Pricing" ? (
+                  <Link key={item} to="/pricing" className="text-sm font-bold text-slate-500 hover:text-indigo-600 transition-colors uppercase tracking-widest">{item}</Link>
+                ) : (
+                  <a key={item} href={`#${item.toLowerCase().replace(/ & /g, "-").replace(/ /g, "-")}`} className="text-sm font-bold text-slate-500 hover:text-indigo-600 transition-colors uppercase tracking-widest">{item}</a>
+                )
               ))}
             </div>
 

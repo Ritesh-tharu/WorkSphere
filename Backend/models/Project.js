@@ -16,7 +16,12 @@ const projectSchema = new mongoose.Schema(
     },
     color: {
       type: String,
-      default: "#6366f1", // Primary accent color
+      default: "#475569", // Default to Slate
+    },
+    visibility: {
+      type: String,
+      enum: ["Private", "Workspace", "Public"],
+      default: "Workspace",
     },
     owner: {
       type: mongoose.Schema.Types.ObjectId,

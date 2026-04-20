@@ -64,6 +64,12 @@ app.use("/api/reports", require("./routes/reportRoutes"));
 // Note Routes
 app.use("/api/notes", require("./routes/noteRoutes"));
 
+// Payment Routes
+app.use("/api/payments", require("./routes/paymentRoutes"));
+
+// Unified Search Route
+app.use("/api/search", require("./routes/searchRoutes"));
+
 // Health check
 app.get("/api/health", (req, res) => {
   res.json({

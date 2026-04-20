@@ -1,4 +1,4 @@
-const mongoose = require("mongoose");
+oconst mongoose = require("mongoose");
 const Project = require("./models/Project");
 const Task = require("./models/Task");
 const Note = require("./models/Note");

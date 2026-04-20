@@ -520,33 +520,32 @@ const TaskBoard = ({ selectedProjectId, onBack, globalSearch }) => {
           </div>
         </div>
 
-        <div className="flex items-center gap-4">
-          <SearchFilters
-            onSearchResults={handleSearchResults}
-            initialFilters={{ project: selectedProjectId }}
-            globalSearch={globalSearch}
-          />
-          <button
-            onClick={() => {
-              setSelectedTask({
-                title: "",
-                status: "todo",
-                priority: "Medium",
-                project: selectedProjectId,
-                description: "",
-                labels: [],
-                checklist: [],
-                attachments: [],
-              });
-              setShowTaskModal(true);
-            }}
-            className="flex items-center gap-2 px-6 py-3 bg-indigo-600 text-white rounded-xl font-black text-[10px] uppercase tracking-widest shadow-lg shadow-indigo-600/20 active:scale-95 transition-all"
-          >
-            <Plus className="w-4 h-4" />
-            <span>Create Task</span>
-          </button>
-        </div>
+        <button
+          onClick={() => {
+            setSelectedTask({
+              title: "",
+              status: "todo",
+              priority: "Medium",
+              project: selectedProjectId,
+              description: "",
+              labels: [],
+              checklist: [],
+              attachments: [],
+            });
+            setShowTaskModal(true);
+          }}
+          className="flex items-center gap-2 px-6 py-3 bg-indigo-600 text-white rounded-xl font-black text-[10px] uppercase tracking-widest shadow-lg shadow-indigo-600/20 active:scale-95 transition-all"
+        >
+          <Plus className="w-4 h-4" />
+          <span>Create Task</span>
+        </button>
       </div>
+
+      <SearchFilters
+        onSearchResults={handleSearchResults}
+        initialFilters={{ project: selectedProjectId }}
+        globalSearch={globalSearch}
+      />
 
       {loading ? (
         <div className="flex-1 flex flex-col items-center justify-center gap-4 bg-white">

@@ -154,6 +154,14 @@ const userSchema = new mongoose.Schema(
     otpExpires: {
       type: Date,
     },
+    plan: {
+      type: String,
+      enum: ["free", "premium"],
+      default: "free",
+    },
+    subscriptionExpires: {
+      type: Date,
+    },
   },
   { timestamps: true },
 );

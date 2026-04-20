@@ -11,6 +11,7 @@ const {
   addComment,
   addChecklistItem,
   toggleChecklistItem,
+  reorderChecklist,
   getTaskStats,
   getRecentTasks,
   getTags,
@@ -44,5 +45,6 @@ router.post("/:id/comments", addComment);
 // Checklist
 router.post("/:id/checklist", addChecklistItem);
 router.put("/:id/checklist/:itemId/toggle", toggleChecklistItem);
+router.put("/:id/checklist/reorder", reorderChecklist);
 
 module.exports = router;

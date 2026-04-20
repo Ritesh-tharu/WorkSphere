@@ -16,6 +16,9 @@ import Settings from "./Component/Settings";
 import AcceptInvite from "./Component/AcceptInvite";
 import VerifyOTP from "./Component/VerifyOTP";
 import ProtectedRoute from "./Component/ProtectedRoute";
+import Pricing from "./Component/Pricing";
+import PaymentSuccess from "./Component/PaymentSuccess";
+import PaymentFailure from "./Component/PaymentFailure";
 import "./App.css";
 
 function App() {
@@ -33,12 +36,15 @@ function App() {
           <Route path="/login" element={<Login />} />
           <Route path="/signup" element={<Signup />} />
           <Route path="/verify-otp" element={<VerifyOTP />} />
+          <Route path="/pricing" element={<Pricing />} />
 
           {/* Private Routes (Protected) */}
           <Route element={<ProtectedRoute />}>
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/taskboard" element={<TaskBoard />} />
             <Route path="/settings" element={<Settings />} />
+            <Route path="/payment-success" element={<PaymentSuccess />} />
+            <Route path="/payment-failure" element={<PaymentFailure />} />
           </Route>
 
           {/* Invitation Route (usually public but handles its own auth) */}

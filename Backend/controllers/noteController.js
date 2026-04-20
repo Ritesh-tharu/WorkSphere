@@ -48,6 +48,17 @@ exports.createNote = async (req, res) => {
     const { title, content, color, tags, project, isPinned } = req.body;
     const userId = req.user._id;
 
+    // Check note limit for free users
+    if (req.user.plan === "free") {
+      const noteCount = await Note.countDocuments({ user: userId });
+      if (noteCount >= 1) {
+        return res.status(403).json({
+          message: "Note limit reached. Free users can only create 1 note.",
+          isLimitReached: true,
+        });
+      }
+    }
+
     const note = new Note({
       title,
       content,

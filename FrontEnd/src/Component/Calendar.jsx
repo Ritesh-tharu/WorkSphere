@@ -71,7 +71,16 @@ const Calendar = ({ onEventClick }) => {
       setShowEventModal(false);
       setEditingEvent(null);
       setNewEvent({ title: "", description: "", startDate: "", endDate: "", color: "#6366f1", reminderTime: 0 });
-    } catch (error) { console.error(error); }
+    } catch (error) { 
+      console.error(error); 
+      if (error.response && error.response.status === 403 && error.response.data.isLimitReached) {
+        if (window.confirm(error.response.data.message + " \n\nWould you like to upgrade to Premium?")) {
+          window.location.href = "/pricing";
+        }
+      } else {
+        alert("Error saving event: " + (error.response?.data?.message || error.message));
+      }
+    }
   };
 
   const deleteEvent = async () => {

@@ -122,7 +122,7 @@ const Signup = () => {
     setLoading(true);
     setSubmitError("");
     try {
-      const response = await fetch("http://localhost:5000/api/auth/google", {
+      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/auth/google`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ idToken: credentialResponse.credential }),
@@ -165,7 +165,7 @@ const Signup = () => {
 
     setLoading(true);
     try {
-      const response = await fetch("http://localhost:5000/api/auth/signup", {
+      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/auth/signup`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -242,7 +242,6 @@ const Signup = () => {
               <GoogleLogin
                 onSuccess={handleGoogleSuccess}
                 onError={() => setStatus({ type: "error", message: "Google Signup Failed" })}
-                useOneTap
                 theme="outline"
                 shape="pill"
                 size="large"

@@ -351,4 +351,41 @@ const googleLogin = async (req, res) => {
   }
 };
 
-module.exports = { registerUser, verifyOTP, resendOTP, loginUser, updateProfile, changePassword, googleLogin };
+// ================= ME (Get Profile) =================
+const getMe = async (req, res) => {
+  try {
+    const user = await User.findById(req.user.id);
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    res.json({
+      _id: user._id,
+      name: user.name,
+      email: user.email,
+      phoneNumber: user.phoneNumber,
+      dateOfBirth: user.dateOfBirth,
+      location: user.location,
+      jobTitle: user.jobTitle,
+      bio: user.bio,
+      profilePhoto: user.profilePhoto,
+      role: user.role,
+      plan: user.plan,
+      subscriptionExpires: user.subscriptionExpires,
+      notificationPreferences: user.notificationPreferences,
+    });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+module.exports = {
+  registerUser,
+  verifyOTP,
+  resendOTP,
+  loginUser,
+  updateProfile,
+  changePassword,
+  googleLogin,
+  getMe,
+};

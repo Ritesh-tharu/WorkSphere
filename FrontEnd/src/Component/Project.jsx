@@ -32,22 +32,34 @@ const ProjectManager = ({ initialSelectedId, globalSearch }) => {
   const [activeSubTab, setActiveSubTab] = useState("boards"); // boards, members, settings
   const [activeMenuId, setActiveMenuId] = useState(null); // Track board context menu
   const [editingProject, setEditingProject] = useState(null); // Track board being edited
+  const [showVisibilityDropdown, setShowVisibilityDropdown] = useState(false);
 
   const [newProject, setNewProject] = useState({
     name: "",
     description: "",
-    color: "#6366f1",
+    color: "#475569", // Slate as default
     visibility: "Workspace"
   });
 
   const token = localStorage.getItem("token");
   const headers = { headers: { Authorization: `Bearer ${token}` } };
 
+  const VISIBILITY_OPTIONS = [
+    { id: 'Private', label: 'Private', description: 'Only board members can see and edit this board.' },
+    { id: 'Workspace', label: 'Workspace', description: 'All members of the workspace can see and edit this board.' },
+    { id: 'Public', label: 'Public', description: 'Anyone on the internet can see this board. Only board members can edit.' },
+  ];
+
   const THEMES = [
     { type: 'color', name: "Slate", color: "#475569" },
     { type: 'color', name: "Indigo", color: "#6366f1" },
     { type: 'color', name: "Purple", color: "#a855f7" },
     { type: 'color', name: "Emerald", color: "#10b981" },
+    { type: 'color', name: "Sky", color: "#0ea5e9" },
+    { type: 'color', name: "Amber", color: "#f59e0b" },
+    { type: 'color', name: "Rose", color: "#f43f5e" },
+    { type: 'color', name: "Pink", color: "#ec4899" },
+    { type: 'color', name: "Dark", color: "#1e293b" },
   ];
 
   useEffect(() => {
@@ -94,6 +106,15 @@ const ProjectManager = ({ initialSelectedId, globalSearch }) => {
       closeModal();
     } catch (error) {
       console.error("Error saving project:", error);
+      if (error.response && error.response.status === 403 && error.response.data.isLimitReached) {
+        if (window.confirm(error.response.data.message + " Would you like to upgrade to Premium?")) {
+          // This component doesn't have navigate, I should probably pass it or use a redirect.
+          // For now, I'll use window.location if navigate isn't available easily.
+          window.location.href = "/pricing";
+        }
+      } else {
+        alert(error.response?.data?.message || "Failed to save project");
+      }
     }
   };
 
@@ -123,7 +144,7 @@ const ProjectManager = ({ initialSelectedId, globalSearch }) => {
   const closeModal = () => {
     setShowCreateModal(false);
     setEditingProject(null);
-    setNewProject({ name: "", description: "", color: "#6366f1", visibility: "Workspace" });
+    setNewProject({ name: "", description: "", color: "#475569", visibility: "Workspace" });
   };
 
   const filteredProjects = projects.filter(project => 
@@ -341,15 +362,41 @@ const ProjectManager = ({ initialSelectedId, globalSearch }) => {
                       />
                    </div>
 
-                   <div>
+                   <div className="relative">
                       <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-2 block">Visibility</label>
-                      <button type="button" className="w-full flex items-center justify-between bg-[#22272b] border border-[#ffffff15] hover:bg-[#2c333a] rounded px-3 py-2.5 text-xs font-bold text-white transition-all text-left">
+                      <button 
+                        type="button" 
+                        onClick={() => setShowVisibilityDropdown(!showVisibilityDropdown)}
+                        className="w-full flex items-center justify-between bg-[#22272b] border border-[#ffffff15] hover:bg-[#2c333a] rounded px-3 py-2.5 text-xs font-bold text-white transition-all text-left"
+                      >
                         <span className="flex items-center gap-2 capitalize">
                            <ViewColumnsIcon className="w-4 h-4 text-slate-400" />
                            {newProject.visibility}
                         </span>
-                        <ChevronDown className="w-4 h-4 text-slate-400" />
+                        <ChevronDown className={`w-4 h-4 text-slate-400 transition-transform ${showVisibilityDropdown ? 'rotate-180' : ''}`} />
                       </button>
+
+                      {showVisibilityDropdown && (
+                        <>
+                          <div className="fixed inset-0 z-[105]" onClick={() => setShowVisibilityDropdown(false)} />
+                          <div className="absolute left-0 bottom-full mb-2 w-full bg-[#2c333a] border border-[#ffffff15] rounded-lg shadow-2xl z-[110] py-2 animate-in slide-in-from-bottom-2 duration-200">
+                             {VISIBILITY_OPTIONS.map((opt) => (
+                               <button
+                                 key={opt.id}
+                                 type="button"
+                                 onClick={() => {
+                                   setNewProject({ ...newProject, visibility: opt.id });
+                                   setShowVisibilityDropdown(false);
+                                 }}
+                                 className={`w-full text-left px-4 py-3 hover:bg-[#384148] transition-all border-b border-[#ffffff05] last:border-0 ${newProject.visibility === opt.id ? 'bg-[#384148]' : ''}`}
+                               >
+                                 <div className="text-[11px] font-black uppercase tracking-widest text-white mb-0.5">{opt.label}</div>
+                                 <div className="text-[9px] font-medium text-slate-400 leading-tight">{opt.description}</div>
+                               </button>
+                             ))}
+                          </div>
+                        </>
+                      )}
                    </div>
 
                    <button 

@@ -107,7 +107,13 @@ const Note = ({ selectedProjectId }) => {
       closeModal();
     } catch (error) {
       console.error("Error saving note:", error);
-      alert("Error saving note: " + (error.response?.data?.message || error.message));
+      if (error.response && error.response.status === 403 && error.response.data.isLimitReached) {
+        if (window.confirm(error.response.data.message + " \n\nWould you like to upgrade to Premium?")) {
+          window.location.href = "/pricing";
+        }
+      } else {
+        alert("Error saving note: " + (error.response?.data?.message || error.message));
+      }
     }
   };
 

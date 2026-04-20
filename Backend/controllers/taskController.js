@@ -68,65 +68,72 @@ exports.getTasks = async (req, res) => {
       $or: [{ owner: userId }, { teamMembers: userId }]
     }).distinct("_id");
 
-    let query = { isArchived: archived === "true" };
+    const conditions = [{ isArchived: archived === "true" }];
 
     if (status) {
-      query.status = status.includes(",") ? { $in: status.split(",") } : status;
+      conditions.push({
+        status: status.includes(",") ? { $in: status.split(",") } : status
+      });
     }
     
     // Improved Project/Access Filtering
     if (project && project !== "all") {
       if (project === "null" || project === "undefined") {
-        query.project = null;
-        query.user = userId; // Global tasks are private to the creator
+        conditions.push({ project: null, user: userId });
       } else if (mongoose.Types.ObjectId.isValid(project)) {
-        const targetProjId = new mongoose.Types.ObjectId(project);
-        // Verify access before filtering
         if (!userProjects.some(id => id.toString() === project)) {
            return res.status(403).json({ message: "Access denied to requested project scope" });
         }
-        query.project = targetProjId;
+        conditions.push({ project: new mongoose.Types.ObjectId(project) });
       }
-    } else if (project === "all" || search) {
-      // Global Search or "All Projects" view: include user's projects + user's global tasks
-      query.$or = [
-        { project: { $in: userProjects } },
-        { project: null, user: userId }
-      ];
     } else {
-      // Default isolation (e.g. initial load of workspace)
-      query.project = null;
-      query.user = userId;
+      // "All Projects" or Global View: include user's projects + user's global tasks
+      conditions.push({
+        $or: [
+          { project: { $in: userProjects } },
+          { project: null, user: userId }
+        ]
+      });
     }
-    if (assignedTo) query.assignedTo = assignedTo;
+
+    if (assignedTo) conditions.push({ assignedTo });
+    
     if (priority) {
-      query.priority = priority.includes(",") ? { $in: priority.split(",") } : priority;
+      conditions.push({
+        priority: priority.includes(",") ? { $in: priority.split(",") } : priority
+      });
     }
 
     if (dueDate) {
       const now = new Date();
       if (dueDate === "today") {
-        const endOfDay = new Date();
-        endOfDay.setHours(23, 59, 59, 999);
-        query.dueDate = { $lte: endOfDay, $gte: new Date(now.setHours(0,0,0,0)) };
+        const start = new Date(now.setHours(0,0,0,0));
+        const end = new Date(now.setHours(23,59,59,999));
+        conditions.push({ dueDate: { $gte: start, $lte: end } });
       } else if (dueDate === "this-week") {
-        const endOfWeek = new Date();
-        endOfWeek.setDate(endOfWeek.getDate() + 7);
-        query.dueDate = { $lte: endOfWeek, $gte: new Date(now.setHours(0,0,0,0)) };
+        const start = new Date(now.setHours(0,0,0,0));
+        const end = new Date();
+        end.setDate(end.getDate() + 7);
+        conditions.push({ dueDate: { $gte: start, $lte: end } });
       } else if (dueDate === "overdue") {
-        query.dueDate = { $lt: new Date() };
+        conditions.push({ dueDate: { $lt: new Date() }, status: { $ne: "completed" } });
       }
     }
+
     if (tags) {
-      query["labels.text"] = { $in: tags.split(",") };
+      conditions.push({ "labels.text": { $in: tags.split(",") } });
     }
 
     if (search) {
-      query.$or = [
-        { title: { $regex: search, $options: "i" } },
-        { description: { $regex: search, $options: "i" } },
-      ];
+      conditions.push({
+        $or: [
+          { title: { $regex: search, $options: "i" } },
+          { description: { $regex: search, $options: "i" } },
+        ]
+      });
     }
+
+    const query = { $and: conditions };
 
     let tasksQuery = Task.find(query)
       .populate("assignedTo", "name email profilePhoto")
@@ -192,6 +199,17 @@ exports.createTask = async (req, res) => {
       assignedTo,
       labels,
     } = req.body;
+
+    // Check task limit for free users
+    if (req.user.plan === "free") {
+      const taskCount = await Task.countDocuments({ user: userId });
+      if (taskCount >= 3) {
+        return res.status(403).json({
+          message: "Task limit reached. Free users can only create 3 tasks across all projects.",
+          isLimitReached: true,
+        });
+      }
+    }
 
     // Get the highest position for the status column
     const lastTask = await Task.findOne({
@@ -669,6 +687,26 @@ exports.getRecentActivity = async (req, res) => {
     res.json(activities.sort((a, b) => b.timestamp - a.timestamp).slice(0, 10));
   } catch (error) {
     res.status(500).json({ message: error.message });
+  }
+};// Reorder checklist items
+exports.reorderChecklist = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { checklist } = req.body;
+
+    const task = await Task.findById(id);
+    if (!task) {
+      return res.status(404).json({ message: "Task not found" });
+    }
+
+    // Update the checklist
+    task.checklist = checklist;
+    await task.save();
+
+    res.json(task);
+  } catch (error) {
+    console.error("Reorder checklist error:", error);
+    res.status(500).json({ message: "Error reordering checklist" });
   }
 };
 

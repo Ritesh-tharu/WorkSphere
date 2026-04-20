@@ -9,6 +9,7 @@ const {
   googleLogin,
   verifyOTP,
   resendOTP,
+  getMe,
 } = require("../controllers/authController");
 const { protect } = require("../middleware/authMiddleware");
 const upload = require("../middleware/uploadMiddleware");
@@ -25,5 +26,6 @@ router.put(
   updateProfile,
 );
 router.put("/change-password", protect, changePassword);
+router.get("/me", protect, getMe);
 
 module.exports = router;

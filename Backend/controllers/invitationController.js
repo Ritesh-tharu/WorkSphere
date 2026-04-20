@@ -23,12 +23,20 @@ exports.sendInvite = async (req, res) => {
     const existingUser = await User.findOne({ email });
     if (existingUser) {
       // Add to team if already registered
+      // Check team limit for free users
+      const inviter = await User.findById(inviterId);
+      if (inviter.plan === "free" && inviter.teamMembers.length >= 5) {
+        return res.status(403).json({
+          message: "Team member limit reached. Free users can only have up to 5 team members across all projects.",
+          isLimitReached: true,
+        });
+      }
+
       await User.findByIdAndUpdate(inviterId, {
         $addToSet: { teamMembers: existingUser._id },
       });
 
       // Create notification for existing user
-      const inviter = await User.findById(inviterId);
       await Notification.create({
         user: existingUser._id,
         title: "Added to Team",

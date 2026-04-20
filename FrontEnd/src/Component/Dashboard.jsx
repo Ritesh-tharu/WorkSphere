@@ -32,6 +32,7 @@ import {
   Bars3Icon,
   CommandLineIcon,
   ArrowRightOnRectangleIcon,
+  SparklesIcon,
 } from "@heroicons/react/24/outline";
 import { BoltIcon as BoltIconSolid } from "@heroicons/react/24/solid";
 import TaskModal from "./TaskModal";
@@ -55,7 +56,7 @@ const Dashboard = () => {
   const [showTaskModal, setShowTaskModal] = useState(false);
   const [calendarKey, setCalendarKey] = useState(0);
   const [globalSearch, setGlobalSearch] = useState("");
-  const [globalSearchResults, setGlobalSearchResults] = useState([]);
+  const [globalSearchResults, setGlobalSearchResults] = useState({ tasks: [], projects: [], users: [], notes: [] });
   const [searchLoading, setSearchLoading] = useState(false);
 
   useEffect(() => {
@@ -101,7 +102,7 @@ const Dashboard = () => {
 
   useEffect(() => {
     if (!globalSearch.trim()) {
-      setGlobalSearchResults([]);
+      setGlobalSearchResults({ tasks: [], projects: [], users: [], notes: [] });
       return;
     }
 
@@ -115,7 +116,7 @@ const Dashboard = () => {
   const fetchGlobalSearchResults = async () => {
     try {
       setSearchLoading(true);
-      const res = await axios.get(`http://localhost:5000/api/tasks/search?search=${globalSearch}`, {
+      const res = await axios.get(`http://localhost:5000/api/search?q=${globalSearch}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       setGlobalSearchResults(res.data);
@@ -130,6 +131,7 @@ const Dashboard = () => {
     try {
       setLoading(true);
       await Promise.all([
+        fetchUserProfile(),
         fetchStats(),
         fetchProjects(),
         fetchRecentTasks(),
@@ -140,6 +142,18 @@ const Dashboard = () => {
       console.error("Dashboard init error:", error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchUserProfile = async () => {
+    try {
+      const res = await axios.get("http://localhost:5000/api/auth/me", {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      setUser(res.data);
+      localStorage.setItem("user", JSON.stringify(res.data));
+    } catch (error) {
+      console.error("Error fetching user profile:", error);
     }
   };
 
@@ -313,9 +327,17 @@ const Dashboard = () => {
             </div>
             {sidebarOpen && (
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-bold truncate text-primary">
-                  {user.name}
-                </p>
+                <div className="flex items-center gap-2">
+                  <p className="text-sm font-bold truncate text-primary">
+                    {user.name}
+                  </p>
+                  {user.plan === "premium" && (
+                    <span className="bg-gradient-to-r from-amber-400 to-amber-600 text-[8px] font-black text-white px-1.5 py-0.5 rounded-full shadow-sm flex items-center gap-0.5">
+                      <SparklesIcon className="w-2 h-2" />
+                      PREMIUM
+                    </span>
+                  )}
+                </div>
                 <p className="text-[10px] text-secondary truncate">
                   {user.email}
                 </p>
@@ -371,6 +393,22 @@ const Dashboard = () => {
             </div>
           </div>
 
+          <div className="flex items-center gap-4">
+            {user.plan === "free" && (
+              <button 
+                onClick={() => navigate("/pricing")}
+                className="hidden sm:flex items-center gap-2 px-4 py-1.5 bg-blue-600/10 text-blue-600 text-[10px] font-black uppercase tracking-widest rounded-full hover:bg-blue-600 hover:text-white transition-all border border-blue-600/20"
+              >
+                <SparklesIcon className="w-3 h-3" />
+                Upgrade to Premium
+              </button>
+            )}
+            
+            <div className="flex items-center gap-2">
+               {/* Search placeholder for better UI balance if needed */}
+            </div>
+          </div>
+
           {/* GLOBAL SEARCH BAR */}
           <div className="flex-1 max-w-xl mx-8 hidden lg:block">
             <div className="relative group">
@@ -405,43 +443,134 @@ const Dashboard = () => {
                          ) : (
                            <MagnifyingGlassIcon className="w-4 h-4" />
                          )}
-                         Search Results ({globalSearchResults.length})
-                      </h2>
-                      <button onClick={() => setGlobalSearch("")} className="text-[10px] font-black text-secondary hover:text-primary uppercase tracking-widest">
-                        Clear results
-                      </button>
-                   </div>
-                   
-                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      {globalSearchResults.map(task => (
-                        <div 
-                          key={task._id}
-                          onClick={() => {
-                            setSelectedTask(task);
-                            setShowTaskModal(true);
-                          }}
-                          className="bg-card p-4 rounded-xl border border-indigo-500/20 hover:border-indigo-500 transition-all cursor-pointer group flex items-center justify-between"
-                        >
-                           <div className="flex items-center gap-4">
-                              <div className={`w-2 h-2 rounded-full ${task.status === 'completed' ? 'bg-emerald-500' : 'bg-amber-500'}`} />
-                              <div>
-                                 <p className="text-sm font-bold text-primary group-hover:text-indigo-600 transition-colors uppercase tracking-tight">{task.title}</p>
-                                 <p className="text-[10px] text-secondary font-bold opacity-60">
-                                   {projects.find(p => p._id === task.project)?.name || "Global Workspace"} • {task.status.toUpperCase()}
-                                 </p>
-                              </div>
-                           </div>
-                           <ChevronRight className="w-4 h-4 text-secondary opacity-0 group-hover:opacity-100 transition-all" />
-                        </div>
-                      ))}
-                      {globalSearchResults.length === 0 && !searchLoading && (
-                        <div className="col-span-full py-8 text-center bg-slate-50 dark:bg-slate-900 border border-dashed border-base rounded-2xl">
-                           <p className="text-xs font-bold text-secondary uppercase tracking-widest">No matching tasks found</p>
-                        </div>
-                      )}
-                   </div>
-                   <div className="h-[1px] bg-base w-full" />
-                </div>
+                          Search Results
+                       </h2>
+                       <button onClick={() => setGlobalSearch("")} className="text-[10px] font-black text-secondary hover:text-primary uppercase tracking-widest">
+                         Clear results
+                       </button>
+                    </div>
+                    
+                    <div className="space-y-10">
+                       {/* PROJECTS SECTION */}
+                       {globalSearchResults.projects?.length > 0 && (
+                         <div className="space-y-4">
+                            <h3 className="text-[10px] font-black text-secondary uppercase tracking-widest opacity-60">Boards ({globalSearchResults.projects.length})</h3>
+                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                               {globalSearchResults.projects.map(p => (
+                                 <button 
+                                   key={p._id}
+                                   onClick={() => {
+                                      setSelectedProjectId(p._id);
+                                      setActiveView("boards");
+                                      setGlobalSearch("");
+                                   }}
+                                   className="flex items-center gap-4 p-4 bg-card border border-base rounded-2xl hover:border-indigo-500 transition-all group active:scale-[0.98]"
+                                 >
+                                    <div 
+                                       className="w-10 h-10 rounded-xl flex items-center justify-center text-white"
+                                       style={{ backgroundColor: p.color || '#6366f1' }}
+                                    >
+                                       <ViewColumnsIcon className="w-5 h-5" />
+                                    </div>
+                                    <div className="text-left">
+                                       <p className="text-sm font-black text-primary uppercase tracking-tighter">{p.name}</p>
+                                       <p className="text-[9px] font-bold text-secondary uppercase tracking-widest opacity-60">Jump to Board</p>
+                                    </div>
+                                 </button>
+                               ))}
+                            </div>
+                         </div>
+                       )}
+
+                       {/* TASKS SECTION */}
+                       {globalSearchResults.tasks?.length > 0 && (
+                         <div className="space-y-4">
+                            <h3 className="text-[10px] font-black text-secondary uppercase tracking-widest opacity-60">Tasks ({globalSearchResults.tasks.length})</h3>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                               {globalSearchResults.tasks.map(task => (
+                                 <div 
+                                   key={task._id}
+                                   onClick={() => {
+                                     setSelectedTask(task);
+                                     setShowTaskModal(true);
+                                   }}
+                                   className="bg-card p-4 rounded-xl border border-indigo-500/20 hover:border-indigo-500 transition-all cursor-pointer group flex items-center justify-between"
+                                 >
+                                    <div className="flex items-center gap-4">
+                                       <div className={`w-2 h-2 rounded-full ${task.status === 'completed' ? 'bg-emerald-500' : 'bg-amber-500'}`} />
+                                       <div>
+                                          <p className="text-sm font-bold text-primary group-hover:text-indigo-600 transition-colors uppercase tracking-tight">{task.title}</p>
+                                          <p className="text-[10px] text-secondary font-bold opacity-60">
+                                            {task.project?.name || "Global Workspace"} • {task.status.toUpperCase()}
+                                          </p>
+                                       </div>
+                                    </div>
+                                    <ChevronRight className="w-4 h-4 text-secondary opacity-0 group-hover:opacity-100 transition-all" />
+                                 </div>
+                               ))}
+                            </div>
+                         </div>
+                       )}
+
+                       {/* NOTES SECTION */}
+                       {globalSearchResults.notes?.length > 0 && (
+                         <div className="space-y-4">
+                            <h3 className="text-[10px] font-black text-secondary uppercase tracking-widest opacity-60">Notes ({globalSearchResults.notes.length})</h3>
+                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                               {globalSearchResults.notes.map(note => (
+                                 <button 
+                                   key={note._id}
+                                   onClick={() => {
+                                      setActiveView("notes");
+                                      setGlobalSearch("");
+                                   }}
+                                   className="flex items-center gap-4 p-4 bg-card border border-base rounded-2xl hover:border-amber-500 transition-all group"
+                                 >
+                                    <div className="w-10 h-10 rounded-xl bg-amber-50/50 flex items-center justify-center text-amber-600">
+                                       <DocumentTextIcon className="w-5 h-5" />
+                                    </div>
+                                    <div className="text-left">
+                                       <p className="text-sm font-black text-primary uppercase tracking-tighter truncate max-w-[150px]">{note.title}</p>
+                                       <p className="text-[9px] font-bold text-secondary uppercase tracking-widest opacity-60">Open in Notes</p>
+                                    </div>
+                                 </button>
+                               ))}
+                            </div>
+                         </div>
+                       )}
+
+                       {/* USER SECTION */}
+                       {globalSearchResults.users?.length > 0 && (
+                         <div className="space-y-4">
+                            <h3 className="text-[10px] font-black text-secondary uppercase tracking-widest opacity-60">Team Members ({globalSearchResults.users.length})</h3>
+                            <div className="flex flex-wrap gap-4">
+                               {globalSearchResults.users.map(u => (
+                                 <div key={u._id} className="flex items-center gap-3 p-2 bg-card border border-base rounded-full pr-4">
+                                    <div className="w-8 h-8 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-600 text-[10px] font-black border border-white">
+                                       {u.profilePhoto ? <img src={u.profilePhoto} className="w-full h-full rounded-full object-cover" /> : u.name[0]}
+                                    </div>
+                                    <div>
+                                       <p className="text-[11px] font-black text-primary uppercase tracking-tight">{u.name}</p>
+                                       <p className="text-[9px] font-bold text-secondary opacity-60">{u.email}</p>
+                                    </div>
+                                 </div>
+                               ))}
+                            </div>
+                         </div>
+                       )}
+
+                       {(!globalSearchResults.tasks?.length && !globalSearchResults.projects?.length && !globalSearchResults.notes?.length && !globalSearchResults.users?.length) && !searchLoading && (
+                         <div className="py-20 text-center bg-slate-50 border border-dashed border-base rounded-3xl">
+                            <div className="w-16 h-16 bg-white rounded-2xl shadow-sm flex items-center justify-center mx-auto mb-4 border border-base">
+                               <MagnifyingGlassIcon className="w-8 h-8 text-slate-300" />
+                            </div>
+                            <p className="text-sm font-black text-primary uppercase tracking-tight">No matches found anywhere</p>
+                            <p className="text-[10px] font-bold text-secondary uppercase tracking-widest mt-1">Try searching for tasks, projects, notes or team members</p>
+                         </div>
+                       )}
+                    </div>
+                    <div className="h-[1px] bg-base w-full" />
+                 </div>
               )}
 
               <div className="space-y-2">

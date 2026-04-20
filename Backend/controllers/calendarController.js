@@ -74,6 +74,18 @@ exports.createEvent = async (req, res) => {
       reminders,
       recurrence,
     } = req.body;
+    const userId = req.user.id;
+
+    // Check reminder limit for free users
+    if (req.user.plan === "free") {
+      const eventCount = await CalendarEvent.countDocuments({ user: userId });
+      if (eventCount >= 1) {
+        return res.status(403).json({
+          message: "Reminder limit reached. Free users can only set 1 reminder.",
+          isLimitReached: true,
+        });
+      }
+    }
 
     const event = new CalendarEvent({
       title,
