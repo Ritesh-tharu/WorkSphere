@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useSearchParams, useNavigate, Link } from 'react-router-dom';
 import axios from 'axios';
+import { API_BASE_URL } from '../config';
 import { motion } from 'framer-motion';
 import { CheckCircleIcon } from '@heroicons/react/24/outline';
 
@@ -18,7 +19,7 @@ const PaymentSuccess = () => {
       }
 
       try {
-        const response = await axios.get(`http://localhost:5000/api/payments/verify?data=${data}`);
+        const response = await axios.get(`${API_BASE_URL}/api/payments/verify?data=${data}`);
         if (response.data.success) {
           setStatus('success');
           // Update user info in local storage if needed, or just let the app re-fetch

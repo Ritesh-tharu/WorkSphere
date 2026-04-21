@@ -49,9 +49,9 @@ const Calendar = ({ onEventClick }) => {
   const handleSaveEvent = async (e) => {
     e.preventDefault();
     try {
-      const eventData = { 
-        ...newEvent, 
-        startDate: newEvent.startDate || selectedDate || new Date(), 
+      const eventData = {
+        ...newEvent,
+        startDate: newEvent.startDate || selectedDate || new Date(),
         endDate: newEvent.endDate || selectedDate || new Date(),
         reminders: newEvent.reminderTime > 0 ? [{ time: newEvent.reminderTime, sent: false }] : []
       };
@@ -71,8 +71,8 @@ const Calendar = ({ onEventClick }) => {
       setShowEventModal(false);
       setEditingEvent(null);
       setNewEvent({ title: "", description: "", startDate: "", endDate: "", color: "#6366f1", reminderTime: 0 });
-    } catch (error) { 
-      console.error(error); 
+    } catch (error) {
+      console.error(error);
       if (error.response && error.response.status === 403 && error.response.data.isLimitReached) {
         if (window.confirm(error.response.data.message + " \n\nWould you like to upgrade to Premium?")) {
           window.location.href = "/pricing";
@@ -119,10 +119,10 @@ const Calendar = ({ onEventClick }) => {
     if (date) {
       setSelectedDate(date);
       setEditingEvent(null);
-      setNewEvent({ 
-        title: "", 
-        description: "", 
-        startDate: date.toISOString().split("T")[0], 
+      setNewEvent({
+        title: "",
+        description: "",
+        startDate: date.toISOString().split("T")[0],
         endDate: date.toISOString().split("T")[0],
         color: "#6366f1",
         reminderTime: 0
@@ -134,12 +134,12 @@ const Calendar = ({ onEventClick }) => {
   const handleEventEdit = (event) => {
     setEditingEvent(event);
     setNewEvent({
-       title: event.title,
-       description: event.description || "",
-       startDate: new Date(event.startDate).toISOString().split("T")[0],
-       endDate: new Date(event.endDate).toISOString().split("T")[0],
-       color: event.color || "#6366f1",
-       reminderTime: event.reminders && event.reminders.length > 0 ? event.reminders[0].time : 0
+      title: event.title,
+      description: event.description || "",
+      startDate: new Date(event.startDate).toISOString().split("T")[0],
+      endDate: new Date(event.endDate).toISOString().split("T")[0],
+      color: event.color || "#6366f1",
+      reminderTime: event.reminders && event.reminders.length > 0 ? event.reminders[0].time : 0
     });
     setShowEventModal(true);
   };
@@ -147,13 +147,13 @@ const Calendar = ({ onEventClick }) => {
   const getEventsForDate = (date) => date ? events.filter(e => new Date(e.startDate).toDateString() === date.toDateString()) : [];
 
   return (
-    <div className="max-w-7xl mx-auto space-y-8 animate-in fade-in duration-500">
+    <div className="p-8 mx-auto space-y-8 animate-in fade-in duration-500">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 px-1">
         <div>
           <h1 className="text-3xl font-extrabold text-slate-900 tracking-tight mb-1">Calendar</h1>
           <p className="text-sm font-medium text-slate-400">Track milestones and synchronize team deadlines.</p>
         </div>
-        
+
         <div className="flex items-center gap-4 bg-white p-1.5 rounded-xl border border-slate-200 shadow-sm">
           <div className="flex items-center gap-2 px-2">
             <button onClick={prevMonth} className="p-1.5 rounded-xl hover:bg-slate-50 text-slate-400 transition-all"><ChevronLeft size={18} /></button>
@@ -176,13 +176,13 @@ const Calendar = ({ onEventClick }) => {
                 <div key={day} className="py-3 text-center text-[10px] font-bold text-slate-400 uppercase tracking-widest">{day}</div>
               ))}
             </div>
-            
+
             <div className="grid grid-cols-7">
               {getDaysInMonth(currentDate).map((date, i) => {
                 const dateEvents = getEventsForDate(date);
                 return (
-                  <div 
-                    key={i} 
+                  <div
+                    key={i}
                     onClick={() => handleDateClick(date)}
                     className={`min-h-[120px] p-3 border-r border-b border-slate-100 transition-all cursor-pointer group hover:bg-slate-50/50 ${!date ? 'bg-slate-50/30' : ''}`}
                   >
@@ -193,7 +193,7 @@ const Calendar = ({ onEventClick }) => {
                         </div>
                         <div className="space-y-1">
                           {dateEvents.slice(0, 3).map(event => (
-                            <div 
+                            <div
                               key={event._id}
                               onClick={(e) => {
                                 e.stopPropagation();
@@ -202,8 +202,8 @@ const Calendar = ({ onEventClick }) => {
                               className="px-2 py-1 rounded-xl text-[9px] font-bold truncate flex items-center gap-1.5 hover:brightness-95 active:scale-95 transition-all"
                               style={{ backgroundColor: `${event.color}15`, color: event.color }}
                             >
-                               <div className="w-1 h-3 rounded-full shrink-0" style={{ backgroundColor: event.color }} />
-                               {event.title}
+                              <div className="w-1 h-3 rounded-full shrink-0" style={{ backgroundColor: event.color }} />
+                              {event.title}
                             </div>
                           ))}
                           {dateEvents.length > 3 && (
@@ -220,80 +220,80 @@ const Calendar = ({ onEventClick }) => {
         </div>
 
         <div className="space-y-6">
-           <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm">
-              <h3 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-6 flex items-center gap-2">
-                 <Clock size={14} /> Upcoming Events
-              </h3>
-              <div className="space-y-6">
-                 {events.slice(0, 5).map(event => (
-                   <div 
-                     key={event._id} 
-                     onClick={() => handleEventEdit(event)}
-                     className="relative pl-4 border-l-2 border-slate-100 space-y-1 group cursor-pointer hover:border-indigo-500 transition-all"
-                   >
-                      <p className="text-[9px] font-bold text-slate-400 uppercase">{new Date(event.startDate).toLocaleDateString()}</p>
-                      <h4 className="text-xs font-bold text-slate-800 truncate group-hover:text-indigo-600 transition-colors">{event.title}</h4>
-                      <p className="text-[10px] text-slate-400 font-medium truncate">{event.description || (event.type === 'task' ? `Task: ${event.status}` : "No mission brief.")}</p>
-                   </div>
-                 ))}
-                 {!events.length && <p className="text-xs font-bold text-slate-300 uppercase tracking-widest text-center py-10">Static horizon.</p>}
-              </div>
-           </div>
+          <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm">
+            <h3 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-6 flex items-center gap-2">
+              <Clock size={14} /> Upcoming Events
+            </h3>
+            <div className="space-y-6">
+              {events.slice(0, 5).map(event => (
+                <div
+                  key={event._id}
+                  onClick={() => handleEventEdit(event)}
+                  className="relative pl-4 border-l-2 border-slate-100 space-y-1 group cursor-pointer hover:border-indigo-500 transition-all"
+                >
+                  <p className="text-[9px] font-bold text-slate-400 uppercase">{new Date(event.startDate).toLocaleDateString()}</p>
+                  <h4 className="text-xs font-bold text-slate-800 truncate group-hover:text-indigo-600 transition-colors">{event.title}</h4>
+                  <p className="text-[10px] text-slate-400 font-medium truncate">{event.description || (event.type === 'task' ? `Task: ${event.status}` : "No mission brief.")}</p>
+                </div>
+              ))}
+              {!events.length && <p className="text-xs font-bold text-slate-300 uppercase tracking-widest text-center py-10">Static horizon.</p>}
+            </div>
+          </div>
         </div>
       </div>
 
       {showEventModal && (
         <div className="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm animate-in fade-in duration-300" onClick={() => setShowEventModal(false)}>
           <div className="bg-white w-full max-w-lg rounded-2xl border border-slate-200 shadow-2xl p-8 animate-in zoom-in-95 duration-200" onClick={e => e.stopPropagation()}>
-             <div className="flex justify-between items-start mb-6">
-                <h2 className="text-xl font-bold text-slate-900 tracking-tight">
-                   {editingEvent ? "Update Event Details" : "Schedule New Event"}
-                </h2>
-                <button onClick={() => setShowEventModal(false)} className="text-slate-400 hover:text-slate-900 transition-colors"><X size={20} /></button>
-             </div>
-             <form onSubmit={handleSaveEvent} className="space-y-6">
-                <div>
-                  <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2 block">Event Title *</label>
-                  <input className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm text-slate-900 focus:ring-2 focus:ring-slate-900/5 outline-none transition-all font-medium" placeholder="E.g. Strategy Alignment…" required value={newEvent.title} onChange={e => setNewEvent({...newEvent, title: e.target.value})} />
-                </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block">Start Date</label>
-                    <input type="date" className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm text-slate-900 focus:ring-2 focus:ring-slate-900/5 outline-none transition-all font-medium" value={newEvent.startDate} onChange={e => setNewEvent({...newEvent, startDate: e.target.value})} />
-                  </div>
-                  <div className="space-y-2">
-                    <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block">End Date</label>
-                    <input type="date" className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm text-slate-900 focus:ring-2 focus:ring-slate-900/5 outline-none transition-all font-medium" value={newEvent.endDate} onChange={e => setNewEvent({...newEvent, endDate: e.target.value})} />
-                  </div>
-                </div>
-
+            <div className="flex justify-between items-start mb-6">
+              <h2 className="text-xl font-bold text-slate-900 tracking-tight">
+                {editingEvent ? "Update Event Details" : "Schedule New Event"}
+              </h2>
+              <button onClick={() => setShowEventModal(false)} className="text-slate-400 hover:text-slate-900 transition-colors"><X size={20} /></button>
+            </div>
+            <form onSubmit={handleSaveEvent} className="space-y-6">
+              <div>
+                <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2 block">Event Title *</label>
+                <input className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm text-slate-900 focus:ring-2 focus:ring-slate-900/5 outline-none transition-all font-medium" placeholder="E.g. Strategy Alignment…" required value={newEvent.title} onChange={e => setNewEvent({ ...newEvent, title: e.target.value })} />
+              </div>
+              <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
-                   <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block">Notification / Reminder</label>
-                   <select 
-                      className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm text-slate-900 focus:ring-2 focus:ring-slate-900/5 outline-none transition-all font-medium"
-                      value={newEvent.reminderTime}
-                      onChange={e => setNewEvent({...newEvent, reminderTime: parseInt(e.target.value)})}
-                   >
-                      <option value={0}>No reminder</option>
-                      <option value={5}>5 minutes before</option>
-                      <option value={15}>15 minutes before</option>
-                      <option value={30}>30 minutes before</option>
-                      <option value={60}>1 hour before</option>
-                      <option value={1440}>1 day before</option>
-                   </select>
+                  <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block">Start Date</label>
+                  <input type="date" className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm text-slate-900 focus:ring-2 focus:ring-slate-900/5 outline-none transition-all font-medium" value={newEvent.startDate} onChange={e => setNewEvent({ ...newEvent, startDate: e.target.value })} />
                 </div>
+                <div className="space-y-2">
+                  <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block">End Date</label>
+                  <input type="date" className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm text-slate-900 focus:ring-2 focus:ring-slate-900/5 outline-none transition-all font-medium" value={newEvent.endDate} onChange={e => setNewEvent({ ...newEvent, endDate: e.target.value })} />
+                </div>
+              </div>
 
-                <div className="flex gap-3 pt-4">
-                  {editingEvent ? (
-                    <button type="button" onClick={deleteEvent} className="flex-1 py-3 bg-rose-50 hover:bg-rose-100 text-rose-600 rounded-xl font-bold transition-all text-sm uppercase tracking-wider">Delete</button>
-                  ) : (
-                    <button type="button" onClick={() => setShowEventModal(false)} className="flex-1 py-3 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-xl font-bold transition-all text-sm">Discard</button>
-                  )}
-                  <button type="submit" className="flex-[2] py-3 bg-slate-900 hover:bg-slate-800 text-white rounded-xl font-bold text-xs uppercase tracking-widest shadow-md transition-all active:scale-95">
-                     {editingEvent ? "Save Changes" : "Confirm event"}
-                  </button>
-                </div>
-             </form>
+              <div className="space-y-2">
+                <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block">Notification / Reminder</label>
+                <select
+                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm text-slate-900 focus:ring-2 focus:ring-slate-900/5 outline-none transition-all font-medium"
+                  value={newEvent.reminderTime}
+                  onChange={e => setNewEvent({ ...newEvent, reminderTime: parseInt(e.target.value) })}
+                >
+                  <option value={0}>No reminder</option>
+                  <option value={5}>5 minutes before</option>
+                  <option value={15}>15 minutes before</option>
+                  <option value={30}>30 minutes before</option>
+                  <option value={60}>1 hour before</option>
+                  <option value={1440}>1 day before</option>
+                </select>
+              </div>
+
+              <div className="flex gap-3 pt-4">
+                {editingEvent ? (
+                  <button type="button" onClick={deleteEvent} className="flex-1 py-3 bg-rose-50 hover:bg-rose-100 text-rose-600 rounded-xl font-bold transition-all text-sm uppercase tracking-wider">Delete</button>
+                ) : (
+                  <button type="button" onClick={() => setShowEventModal(false)} className="flex-1 py-3 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-xl font-bold transition-all text-sm">Discard</button>
+                )}
+                <button type="submit" className="flex-[2] py-3 bg-slate-900 hover:bg-slate-800 text-white rounded-xl font-bold text-xs uppercase tracking-widest shadow-md transition-all active:scale-95">
+                  {editingEvent ? "Save Changes" : "Confirm event"}
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}

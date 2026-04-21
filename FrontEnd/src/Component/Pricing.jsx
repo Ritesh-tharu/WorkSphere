@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { CheckIcon, XMarkIcon, SparklesIcon } from '@heroicons/react/24/outline';
 import axios from 'axios';
+import { API_BASE_URL } from '../config';
 
 const Pricing = () => {
   const [loading, setLoading] = useState(false);
@@ -52,7 +53,7 @@ const Pricing = () => {
       setLoading(true);
       const token = localStorage.getItem('token');
       
-      const response = await axios.post('http://localhost:5000/api/payments/initiate', 
+      const response = await axios.post(`${API_BASE_URL}/api/payments/initiate`, 
         { amount: 1000 },
         { headers: { Authorization: `Bearer ${token}` } }
       );
