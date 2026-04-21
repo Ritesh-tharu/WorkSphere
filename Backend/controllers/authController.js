@@ -88,7 +88,15 @@ const verifyOTP = async (req, res) => {
     user.otpExpires = undefined;
     await user.save();
 
-    res.json({ message: "Account verified successfully. You can now log in." });
+    res.json({
+      _id: user._id,
+      name: user.name,
+      email: user.email,
+      phoneNumber: user.phoneNumber,
+      profilePhoto: user.profilePhoto,
+      token: generateToken(user._id),
+      message: "Account verified successfully.",
+    });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }

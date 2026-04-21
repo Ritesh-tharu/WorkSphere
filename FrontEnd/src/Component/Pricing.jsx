@@ -30,7 +30,7 @@ const Pricing = () => {
     },
     {
       name: 'Premium',
-      price: '1000',
+      price: '10',
       period: '/month',
       description: 'Advanced features for growing teams and complex projects.',
       features: [
@@ -54,7 +54,7 @@ const Pricing = () => {
       const token = localStorage.getItem('token');
       
       const response = await axios.post(`${API_BASE_URL}/api/payments/initiate`, 
-        { amount: 1000 },
+        { amount: 10 },
         { headers: { Authorization: `Bearer ${token}` } }
       );
 

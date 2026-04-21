@@ -131,7 +131,7 @@ const Signup = () => {
       if (response.ok) {
         if (data.requiresVerification) {
           setSuccess(true);
-          setTimeout(() => navigate("/verify-otp", { state: { email: data.email } }), 1500);
+          setTimeout(() => navigate("/verify-otp", { state: { email: data.email, redirectTo: "/dashboard" } }), 1500);
           return;
         }
         localStorage.setItem("token", data.token);
@@ -178,7 +178,7 @@ const Signup = () => {
       const data = await response.json();
       if (response.ok) {
         setSuccess(true);
-        setTimeout(() => navigate("/verify-otp", { state: { email: formData.email } }), 2000);
+        setTimeout(() => navigate("/verify-otp", { state: { email: formData.email, redirectTo: "/login" } }), 2000);
       } else {
         setSubmitError(data.message || "Registration failed. Please check your details.");
       }

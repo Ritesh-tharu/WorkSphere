@@ -67,15 +67,23 @@ const VerifyOTP = () => {
     setLoading(true);
     setError("");
     try {
-      const response = await fetch("http://localhost:5000/api/auth/verify-otp", {
+      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/auth/verify-otp`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, otp: otpString }),
       });
       const data = await response.json();
       if (response.ok) {
-        setSuccess("Verification successful! Redirecting to login...");
-        setTimeout(() => navigate("/login"), 2000);
+        const redirectPath = location.state?.redirectTo || "/login";
+        
+        // Only store token for direct dashboard routing (e.g. Google Signup)
+        if (data.token && redirectPath === "/dashboard") {
+          localStorage.setItem("token", data.token);
+          localStorage.setItem("user", JSON.stringify(data));
+        }
+
+        setSuccess(`Verification successful! Redirecting to ${redirectPath === "/dashboard" ? "dashboard" : "login"}...`);
+        setTimeout(() => navigate(redirectPath), 2000);
       } else {
         setError(data.message || "Invalid verification code.");
       }
@@ -91,7 +99,7 @@ const VerifyOTP = () => {
     setResending(true);
     setError("");
     try {
-      const response = await fetch("http://localhost:5000/api/auth/resend-otp", {
+      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/auth/resend-otp`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email }),
