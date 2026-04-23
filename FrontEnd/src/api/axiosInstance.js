@@ -11,6 +11,8 @@ axiosInstance.interceptors.request.use(
     const token = localStorage.getItem("token");
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
+    } else {
+      console.warn("API request without token:", config.url);
     }
     return config;
   },
@@ -22,10 +24,14 @@ axiosInstance.interceptors.response.use(
   (response) => response,
   (error) => {
     if (error.response && error.response.status === 401) {
-      console.warn("Unauthorized! Clearing session...");
+      console.warn("Unauthorized API call! Redirecting to login...", error.config.url);
       localStorage.removeItem("token");
       localStorage.removeItem("user");
-      window.location.href = "/login";
+      // Only redirect if not already on login/signup/verify-otp
+      const publicPaths = ["/login", "/signup", "/verify-otp", "/"];
+      if (!publicPaths.includes(window.location.pathname)) {
+        window.location.href = "/login";
+      }
     }
     return Promise.reject(error);
   }

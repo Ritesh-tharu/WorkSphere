@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Eye, EyeOff, Lock, Mail, ChevronRight, Layout } from "lucide-react";
 import { GoogleLogin } from "@react-oauth/google";
+import axiosInstance from "../api/axiosInstance";
 
 const Login = () => {
   const navigate = useNavigate();
@@ -22,25 +23,21 @@ const Login = () => {
     setLoading(true);
     setError("");
     try {
-      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/auth/google`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ idToken: credentialResponse.credential }),
+      const response = await axiosInstance.post("/auth/google", {
+        idToken: credentialResponse.credential,
       });
-      const data = await response.json();
-      if (response.ok) {
-        if (data.requiresVerification) {
-          navigate("/verify-otp", { state: { email: data.email } });
-          return;
-        }
-        localStorage.setItem("token", data.token);
-        localStorage.setItem("user", JSON.stringify(data));
-        navigate("/dashboard");
-      } else {
-        setError(data.message || "Google authentication failed.");
+      const data = response.data;
+      if (data.requiresVerification) {
+        navigate("/verify-otp", { state: { email: data.email } });
+        return;
       }
+      localStorage.setItem("token", data.token);
+      localStorage.setItem("user", JSON.stringify(data));
+      navigate("/dashboard");
     } catch (err) {
-      setError("Failed to synchronize with Google gateway.");
+      setError(
+        err.response?.data?.message || "Google authentication failed."
+      );
     } finally {
       setLoading(false);
     }
@@ -55,21 +52,16 @@ const Login = () => {
     e.preventDefault();
     setLoading(true);
     try {
-      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/auth/login`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(formData),
-      });
-      const data = await response.json();
-      if (response.ok) {
-        localStorage.setItem("token", data.token);
-        localStorage.setItem("user", JSON.stringify(data));
-        navigate("/dashboard");
-      } else {
-        setError(data.message || "Invalid credentials. Please attempt again.");
-      }
+      const response = await axiosInstance.post("/auth/login", formData);
+      const data = response.data;
+      localStorage.setItem("token", data.token);
+      localStorage.setItem("user", JSON.stringify(data));
+      navigate("/dashboard");
     } catch (err) {
-      setError("Portal connection failure. Please check your network.");
+      setError(
+        err.response?.data?.message ||
+          "Invalid credentials. Please attempt again."
+      );
     } finally {
       setLoading(false);
     }

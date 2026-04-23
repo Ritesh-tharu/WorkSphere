@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import axios from "axios";
+import axiosInstance from "../api/axiosInstance";
 import {
   Paperclip,
   X,
@@ -41,8 +41,8 @@ const TaskAttachments = ({ taskId, attachments, onUpdate }) => {
     files.forEach((file) => formData.append("attachments", file));
     setUploading(true);
     try {
-      const res = await axios.post(`http://localhost:5000/api/uploads/task/${taskId}`, formData, {
-        headers: { Authorization: `Bearer ${token}`, "Content-Type": "multipart/form-data" },
+      const res = await axiosInstance.post(`/uploads/task/${taskId}`, formData, {
+        headers: { "Content-Type": "multipart/form-data" },
         onUploadProgress: (p) => setUploadProgress(Math.round((p.loaded * 100) / p.total)),
       });
       onUpdate([...(attachments || []), ...res.data.attachments]);
@@ -52,17 +52,14 @@ const TaskAttachments = ({ taskId, attachments, onUpdate }) => {
   const handleDelete = async (aid) => {
     if (!window.confirm("Delete this attachment?")) return;
     try {
-      await axios.delete(`http://localhost:5000/api/uploads/task/${taskId}/${aid}`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      await axiosInstance.delete(`/uploads/task/${taskId}/${aid}`);
       onUpdate(attachments.filter((a) => a._id !== aid));
     } catch (error) { console.error(error); }
   };
 
   const handleDownload = async (a) => {
     try {
-      const res = await axios.get(`http://localhost:5000/api/uploads/task/${taskId}/${a._id}/download`, {
-        headers: { Authorization: `Bearer ${token}` },
+      const res = await axiosInstance.get(`/uploads/task/${taskId}/${a._id}/download`, {
         responseType: "blob",
       });
       const url = window.URL.createObjectURL(new Blob([res.data]));

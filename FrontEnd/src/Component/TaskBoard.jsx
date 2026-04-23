@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
-import axios from "axios";
+import axiosInstance from "../api/axiosInstance";
+import { SERVER_URL } from "../config";
 import { DragDropContext, Droppable, Draggable } from "@hello-pangea/dnd";
 import {
   Plus,
@@ -11,6 +12,7 @@ import {
   ChevronLeft,
   Search,
   CheckCircle,
+  MessageSquare,
 } from "lucide-react";
 import {
   ChatBubbleLeftEllipsisIcon,
@@ -21,7 +23,7 @@ import {
   MagnifyingGlassIcon,
   Bars2Icon,
 } from "@heroicons/react/24/outline";
-import { CheckCircleIcon as CheckCircleIconSolid } from "@heroicons/react/24/solid";
+import { CheckCircleIcon as CheckCircleIconSolid, EllipsisHorizontalIcon } from "@heroicons/react/24/solid";
 import TaskModal from "./TaskModal";
 import SearchFilters from "./SearchFilters";
 
@@ -83,9 +85,8 @@ const TaskBoard = ({ selectedProjectId, onBack, globalSearch }) => {
     if (!selectedProjectId) return;
 
     try {
-      const res = await axios.get(
-        `http://localhost:5000/api/tasks/stats?project=${selectedProjectId}`,
-        getHeaders(),
+      const res = await axiosInstance.get(
+        `/tasks/stats?project=${selectedProjectId}`
       );
       setProjectStats({
         todo: res.data.todoTasks || 0,
@@ -104,9 +105,8 @@ const TaskBoard = ({ selectedProjectId, onBack, globalSearch }) => {
       setLoading(true);
       // Always include project filter in the request. If no project selected, fetch "null" (Global Workspace)
       const projectParam = selectedProjectId || "null";
-      const url = `http://localhost:5000/api/tasks?project=${projectParam}`;
-
-      const res = await axios.get(url, getHeaders());
+      const url = `/tasks?project=${projectParam}`;
+      const res = await axiosInstance.get(url);
 
       const activeProject = (pList || projects).find(
         (p) => p._id === selectedProjectId,
@@ -169,10 +169,7 @@ const TaskBoard = ({ selectedProjectId, onBack, globalSearch }) => {
   const fetchUsers = async () => {
     try {
       // First get the global team members
-      const res = await axios.get(
-        "http://localhost:5000/api/invitations/team",
-        getHeaders(),
-      );
+      const res = await axiosInstance.get("/invitations/team");
       let team = res.data || [];
 
       // If a project is selected, we also want project-specific members (owner + project team)
@@ -202,10 +199,7 @@ const TaskBoard = ({ selectedProjectId, onBack, globalSearch }) => {
 
   const fetchProjects = async () => {
     try {
-      const res = await axios.get(
-        "http://localhost:5000/api/projects",
-        getHeaders(),
-      );
+      const res = await axiosInstance.get("/projects");
       setProjects(res.data);
       return res.data;
     } catch (e) {
@@ -220,17 +214,13 @@ const TaskBoard = ({ selectedProjectId, onBack, globalSearch }) => {
       return;
     }
     try {
-      const res = await axios.post(
-        "http://localhost:5000/api/tasks",
-        {
-          title: newTaskTitle,
-          status,
-          priority: "Medium",
-          assignedTo: null,
-          project: selectedProjectId,
-        },
-        getHeaders(),
-      );
+      const res = await axiosInstance.post("/tasks", {
+        title: newTaskTitle,
+        status,
+        priority: "Medium",
+        assignedTo: null,
+        project: selectedProjectId,
+      });
 
       setColumns((prev) => ({
         ...prev,
@@ -252,11 +242,9 @@ const TaskBoard = ({ selectedProjectId, onBack, globalSearch }) => {
         name: col.name,
         position: index,
       }));
-      await axios.put(
-        `http://localhost:5000/api/projects/${selectedProjectId}/columns`,
-        { columns: columnPayload },
-        getHeaders(),
-      );
+      await axiosInstance.put(`/projects/${selectedProjectId}/columns`, {
+        columns: columnPayload,
+      });
       // Refresh projects to keep columns in sync
       fetchProjects();
     } catch (e) {
@@ -287,10 +275,7 @@ const TaskBoard = ({ selectedProjectId, onBack, globalSearch }) => {
     try {
       await Promise.all(
         column.items.map((item) =>
-          axios.delete(
-            `http://localhost:5000/api/tasks/${item._id}`,
-            getHeaders(),
-          ),
+          axiosInstance.delete(`/tasks/${item._id}`)
         ),
       );
       const newCols = { ...columns };
@@ -313,11 +298,7 @@ const TaskBoard = ({ selectedProjectId, onBack, globalSearch }) => {
     try {
       await Promise.all(
         columns[columnId].items.map((item) =>
-          axios.put(
-            `http://localhost:5000/api/tasks/${item._id}`,
-            { status: newStatus },
-            getHeaders(),
-          ),
+          axiosInstance.put(`/tasks/${item._id}`, { status: newStatus })
         ),
       );
 
@@ -373,17 +354,13 @@ const TaskBoard = ({ selectedProjectId, onBack, globalSearch }) => {
         [source.droppableId]: { ...sourceCol, items: updatedItems },
       });
       try {
-        await axios.post(
-          "http://localhost:5000/api/tasks/positions",
-          {
-            tasks: updatedItems.map((item, index) => ({
-              id: item._id,
-              status: source.droppableId,
-              position: index,
-            })),
-          },
-          getHeaders(),
-        );
+        await axiosInstance.post("/tasks/positions", {
+          tasks: updatedItems.map((item, index) => ({
+            id: item._id,
+            status: source.droppableId,
+            position: index,
+          })),
+        });
       } catch (e) {
         fetchTasks();
       }
@@ -404,29 +381,21 @@ const TaskBoard = ({ selectedProjectId, onBack, globalSearch }) => {
         },
       });
       try {
-        await axios.put(
-          `http://localhost:5000/api/tasks/${moved._id}`,
-          { status: destination.droppableId },
-          getHeaders(),
-        );
-        await axios.post(
-          "http://localhost:5000/api/tasks/positions",
-          {
-            tasks: [
-              ...sourceItems.map((it, i) => ({
-                id: it._id,
-                status: source.droppableId,
-                position: i,
-              })),
-              ...destItems.map((it, i) => ({
-                id: it._id,
-                status: destination.droppableId,
-                position: i,
-              })),
-            ],
-          },
-          getHeaders(),
-        );
+        await axiosInstance.put(`/tasks/${moved._id}`, { status: destination.droppableId });
+        await axiosInstance.post("/tasks/positions", {
+          tasks: [
+            ...sourceItems.map((it, i) => ({
+              id: it._id,
+              status: source.droppableId,
+              position: i,
+            })),
+            ...destItems.map((it, i) => ({
+              id: it._id,
+              status: destination.droppableId,
+              position: i,
+            })),
+          ],
+        });
         fetchProjectStats();
       } catch (e) {
         fetchTasks();
@@ -676,7 +645,7 @@ const TaskBoard = ({ selectedProjectId, onBack, globalSearch }) => {
                                               {coverAttachment && (
                                                 <div className="h-32 w-full overflow-hidden border-b border-slate-200 bg-slate-100">
                                                   <img
-                                                    src={`http://localhost:5000${coverAttachment.url}`}
+                                                    src={`${SERVER_URL}${coverAttachment.url}`}
                                                     className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                                                     alt=""
                                                   />
@@ -753,7 +722,7 @@ const TaskBoard = ({ selectedProjectId, onBack, globalSearch }) => {
                                                         {item.assignedTo
                                                           .profilePhoto ? (
                                                           <img
-                                                            src={`http://localhost:5000${item.assignedTo.profilePhoto}`}
+                                                            src={`${SERVER_URL}${item.assignedTo.profilePhoto}`}
                                                             className="w-full h-full object-cover"
                                                           />
                                                         ) : (
@@ -888,7 +857,7 @@ const TaskBoard = ({ selectedProjectId, onBack, globalSearch }) => {
                     value: projectStats.doing,
                     color: "text-blue-600",
                     bg: "bg-blue-50",
-                    icon: Clock,
+                    icon: ClockIcon,
                   },
                   {
                     label: "Done",
@@ -984,7 +953,7 @@ const TaskBoard = ({ selectedProjectId, onBack, globalSearch }) => {
                       <div className="w-20 h-20 rounded-3xl bg-slate-50 border border-slate-200 flex items-center justify-center text-3xl font-black text-slate-400 group-hover:bg-indigo-600 group-hover:text-white transition-all overflow-hidden shrink-0 shadow-sm">
                         {user.profilePhoto ? (
                           <img
-                            src={`http://localhost:5000${user.profilePhoto}`}
+                            src={`${SERVER_URL}${user.profilePhoto}`}
                             className="w-full h-full object-cover"
                           />
                         ) : (

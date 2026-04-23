@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import axios from "axios";
+import axiosInstance from "../api/axiosInstance";
 import {
   Search,
   Filter,
@@ -28,8 +28,6 @@ const SearchFilters = ({ onSearchResults, initialFilters = {}, globalSearch }) =
   const [users, setUsers] = useState([]);
   const [tags, setTags] = useState([]);
   const [loading, setLoading] = useState(false);
-
-  const token = localStorage.getItem("token");
 
   const statusOptions = [
     { value: "todo", label: "To Do", color: "#f59e0b" },
@@ -63,9 +61,7 @@ const SearchFilters = ({ onSearchResults, initialFilters = {}, globalSearch }) =
 
   const fetchProjects = async () => {
     try {
-      const res = await axios.get("http://localhost:5000/api/projects", {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      const res = await axiosInstance.get("/projects");
       setProjects(res.data);
     } catch (error) {
       console.error("Error fetching projects:", error);
@@ -74,9 +70,7 @@ const SearchFilters = ({ onSearchResults, initialFilters = {}, globalSearch }) =
 
   const fetchUsers = async () => {
     try {
-      const res = await axios.get("http://localhost:5000/api/invitations/team", {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      const res = await axiosInstance.get("/invitations/team");
       setUsers(res.data);
     } catch (error) {
       console.error("Error fetching users:", error);
@@ -85,9 +79,7 @@ const SearchFilters = ({ onSearchResults, initialFilters = {}, globalSearch }) =
 
   const fetchTags = async () => {
     try {
-      const res = await axios.get("http://localhost:5000/api/tasks/tags", {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      const res = await axiosInstance.get("/tasks/tags");
       setTags(res.data);
     } catch (error) {
       console.error("Error fetching tags:", error);
@@ -110,9 +102,7 @@ const SearchFilters = ({ onSearchResults, initialFilters = {}, globalSearch }) =
       params.append("sortBy", sortBy);
       params.append("sortOrder", sortOrder);
 
-      const res = await axios.get(`http://localhost:5000/api/tasks/search?${params}`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      const res = await axiosInstance.get(`/tasks/search?${params}`);
       onSearchResults(res.data);
     } catch (error) {
       console.error("Error searching tasks:", error);

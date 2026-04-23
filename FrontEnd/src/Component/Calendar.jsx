@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import axios from "axios";
+import axiosInstance from "../api/axiosInstance";
 import {
   ChevronLeft,
   ChevronRight,
@@ -26,8 +26,6 @@ const Calendar = ({ onEventClick }) => {
     reminderTime: 0, // minutes before
   });
 
-  const token = localStorage.getItem("token");
-
   useEffect(() => {
     fetchEvents();
   }, [currentDate]);
@@ -35,15 +33,29 @@ const Calendar = ({ onEventClick }) => {
   const fetchEvents = async () => {
     try {
       setLoading(true);
-      const startOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1);
-      const endOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0);
+      const startOfMonth = new Date(
+        currentDate.getFullYear(),
+        currentDate.getMonth(),
+        1
+      );
+      const endOfMonth = new Date(
+        currentDate.getFullYear(),
+        currentDate.getMonth() + 1,
+        0
+      );
 
-      const res = await axios.get("http://localhost:5000/api/calendar", {
-        params: { startDate: startOfMonth.toISOString(), endDate: endOfMonth.toISOString() },
-        headers: { Authorization: `Bearer ${token}` },
+      const res = await axiosInstance.get("/calendar", {
+        params: {
+          startDate: startOfMonth.toISOString(),
+          endDate: endOfMonth.toISOString(),
+        },
       });
       setEvents(res.data);
-    } catch (error) { console.error(error); } finally { setLoading(false); }
+    } catch (error) {
+      console.error(error);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleSaveEvent = async (e) => {
@@ -53,32 +65,54 @@ const Calendar = ({ onEventClick }) => {
         ...newEvent,
         startDate: newEvent.startDate || selectedDate || new Date(),
         endDate: newEvent.endDate || selectedDate || new Date(),
-        reminders: newEvent.reminderTime > 0 ? [{ time: newEvent.reminderTime, sent: false }] : []
+        reminders:
+          newEvent.reminderTime > 0
+            ? [{ time: newEvent.reminderTime, sent: false }]
+            : [],
       };
 
       if (editingEvent) {
-        const res = await axios.put(`http://localhost:5000/api/calendar/${editingEvent._id}`, eventData, {
-          headers: { Authorization: `Bearer ${token}` }
-        });
-        setEvents(events.map(ev => ev._id === editingEvent._id ? res.data : ev));
+        const res = await axiosInstance.put(
+          `/calendar/${editingEvent._id}`,
+          eventData
+        );
+        setEvents(
+          events.map((ev) => (ev._id === editingEvent._id ? res.data : ev))
+        );
       } else {
-        const res = await axios.post("http://localhost:5000/api/calendar", eventData, {
-          headers: { Authorization: `Bearer ${token}` }
-        });
+        const res = await axiosInstance.post("/calendar", eventData);
         setEvents([res.data, ...events]);
       }
 
       setShowEventModal(false);
       setEditingEvent(null);
-      setNewEvent({ title: "", description: "", startDate: "", endDate: "", color: "#6366f1", reminderTime: 0 });
+      setNewEvent({
+        title: "",
+        description: "",
+        startDate: "",
+        endDate: "",
+        color: "#6366f1",
+        reminderTime: 0,
+      });
     } catch (error) {
       console.error(error);
-      if (error.response && error.response.status === 403 && error.response.data.isLimitReached) {
-        if (window.confirm(error.response.data.message + " \n\nWould you like to upgrade to Premium?")) {
+      if (
+        error.response &&
+        error.response.status === 403 &&
+        error.response.data.isLimitReached
+      ) {
+        if (
+          window.confirm(
+            error.response.data.message + " \n\nWould you like to upgrade to Premium?"
+          )
+        ) {
           window.location.href = "/pricing";
         }
       } else {
-        alert("Error saving event: " + (error.response?.data?.message || error.message));
+        alert(
+          "Error saving event: " +
+            (error.response?.data?.message || error.message)
+        );
       }
     }
   };
@@ -88,13 +122,13 @@ const Calendar = ({ onEventClick }) => {
     if (!window.confirm("Are you sure you want to delete this event?")) return;
 
     try {
-      await axios.delete(`http://localhost:5000/api/calendar/${editingEvent._id}`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      setEvents(events.filter(ev => ev._id !== editingEvent._id));
+      await axiosInstance.delete(`/calendar/${editingEvent._id}`);
+      setEvents(events.filter((ev) => ev._id !== editingEvent._id));
       setShowEventModal(false);
       setEditingEvent(null);
-    } catch (error) { console.error(error); }
+    } catch (error) {
+      console.error(error);
+    }
   };
 
   const getDaysInMonth = (date) => {

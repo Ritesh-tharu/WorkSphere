@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
-import axios from "axios";
+import axiosInstance from "../api/axiosInstance";
 import { CheckCircle2, XCircle, Layout, ShieldCheck, ChevronRight } from "lucide-react";
 
 const AcceptInvite = () => {
@@ -12,7 +12,7 @@ const AcceptInvite = () => {
   useEffect(() => {
     const acceptInvitation = async () => {
       try {
-        const res = await axios.get(`http://localhost:5000/api/invitations/accept/${token}`);
+        const res = await axiosInstance.get(`/invitations/accept/${token}`);
         setEmail(res.data.email);
         setStatus("success");
       } catch (error) {

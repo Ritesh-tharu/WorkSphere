@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import axios from "axios";
+import axiosInstance from "../api/axiosInstance";
 import { Users, CheckCircle2, ChevronRight, Trash2, Bell, MessageSquare, AlertCircle, Mail, Clock } from "lucide-react";
 import {
   BellIcon,
@@ -17,8 +17,6 @@ const NotificationsCenter = () => {
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState("all");
 
-  const token = localStorage.getItem("token");
-
   useEffect(() => {
     fetchNotifications();
   }, []);
@@ -26,38 +24,42 @@ const NotificationsCenter = () => {
   const fetchNotifications = async () => {
     try {
       setLoading(true);
-      const res = await axios.get("http://localhost:5000/api/notifications", {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      const res = await axiosInstance.get("/notifications");
       setNotifications(res.data);
-    } catch (error) { console.error(error); } finally { setLoading(false); }
+    } catch (error) {
+      console.error(error);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const markAsRead = async (id) => {
     try {
-      await axios.put(`http://localhost:5000/api/notifications/${id}/read`, {}, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      setNotifications(notifications.map((n) => (n._id === id ? { ...n, read: true } : n)));
-    } catch (error) { console.error(error); }
+      await axiosInstance.put(`/notifications/${id}/read`, {});
+      setNotifications(
+        notifications.map((n) => (n._id === id ? { ...n, read: true } : n))
+      );
+    } catch (error) {
+      console.error(error);
+    }
   };
 
   const markAllAsRead = async () => {
     try {
-      await axios.put("http://localhost:5000/api/notifications/mark-all-read", {}, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      await axiosInstance.put("/notifications/mark-all-read", {});
       setNotifications(notifications.map((n) => ({ ...n, read: true })));
-    } catch (error) { console.error(error); }
+    } catch (error) {
+      console.error(error);
+    }
   };
 
   const deleteNotification = async (id) => {
     try {
-      await axios.delete(`http://localhost:5000/api/notifications/${id}`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      await axiosInstance.delete(`/notifications/${id}`);
       setNotifications(notifications.filter((n) => n._id !== id));
-    } catch (error) { console.error(error); }
+    } catch (error) {
+      console.error(error);
+    }
   };
 
   const getNotificationIcon = (type) => {

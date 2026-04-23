@@ -5,7 +5,6 @@ import {
   Route,
   Navigate,
 } from "react-router-dom";
-import { GoogleOAuthProvider } from "@react-oauth/google";
 
 import Landing from "./Component/Landing";
 import Login from "./Component/Login";
@@ -28,30 +27,28 @@ function App() {
   }, []);
 
   return (
-    <GoogleOAuthProvider clientId={import.meta.env.VITE_GOOGLE_CLIENT_ID}>
-      <Router>
-        <Routes>
-          {/* Public Routes */}
-          <Route path="/" element={<Landing />} />
-          <Route path="/login" element={<Login />} />
-          <Route path="/signup" element={<Signup />} />
-          <Route path="/verify-otp" element={<VerifyOTP />} />
-          <Route path="/pricing" element={<Pricing />} />
+    <Router>
+      <Routes>
+        {/* Public Routes */}
+        <Route path="/" element={<Landing />} />
+        <Route path="/login" element={<Login />} />
+        <Route path="/signup" element={<Signup />} />
+        <Route path="/verify-otp" element={<VerifyOTP />} />
+        <Route path="/pricing" element={<Pricing />} />
 
-          {/* Private Routes (Protected) */}
-          <Route element={<ProtectedRoute />}>
-            <Route path="/dashboard" element={<Dashboard />} />
-            <Route path="/taskboard" element={<TaskBoard />} />
-            <Route path="/settings" element={<Settings />} />
-            <Route path="/payment-success" element={<PaymentSuccess />} />
-            <Route path="/payment-failure" element={<PaymentFailure />} />
-          </Route>
+        {/* Private Routes (Protected) */}
+        <Route element={<ProtectedRoute />}>
+          <Route path="/dashboard" element={<Dashboard />} />
+          <Route path="/taskboard" element={<TaskBoard />} />
+          <Route path="/settings" element={<Settings />} />
+          <Route path="/payment-success" element={<PaymentSuccess />} />
+          <Route path="/payment-failure" element={<PaymentFailure />} />
+        </Route>
 
-          {/* Invitation Route (usually public but handles its own auth) */}
-          <Route path="/accept-invite/:token" element={<AcceptInvite />} />
-        </Routes>
-      </Router>
-    </GoogleOAuthProvider>
+        {/* Invitation Route (usually public but handles its own auth) */}
+        <Route path="/accept-invite/:token" element={<AcceptInvite />} />
+      </Routes>
+    </Router>
   );
 }
 

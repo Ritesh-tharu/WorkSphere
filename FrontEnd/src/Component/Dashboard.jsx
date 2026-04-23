@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
-import axios from "axios";
+import axiosInstance from "../api/axiosInstance";
+import { SERVER_URL } from "../config";
 import TaskBoard from "./TaskBoard";
 import Team from "./Team";
 import SettingsComponent from "./Settings";
@@ -74,7 +75,7 @@ const Dashboard = () => {
       document.removeEventListener("keydown", handleKeyDown);
     };
   }, []);
-  const token = localStorage.getItem("token");
+  // Token is now handled by axiosInstance interceptors
   const [stats, setStats] = useState({
     activeTasks: 0,
     resolvedTasks: 0,
@@ -116,9 +117,7 @@ const Dashboard = () => {
   const fetchGlobalSearchResults = async () => {
     try {
       setSearchLoading(true);
-      const res = await axios.get(`http://localhost:5000/api/search?q=${globalSearch}`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      const res = await axiosInstance.get(`/search?q=${globalSearch}`);
       setGlobalSearchResults(res.data);
     } catch (error) {
       console.error("Error fetching global search results:", error);
@@ -147,9 +146,7 @@ const Dashboard = () => {
 
   const fetchUserProfile = async () => {
     try {
-      const res = await axios.get("http://localhost:5000/api/auth/me", {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      const res = await axiosInstance.get("/auth/me");
       setUser(res.data);
       localStorage.setItem("user", JSON.stringify(res.data));
     } catch (error) {
@@ -159,12 +156,7 @@ const Dashboard = () => {
 
   const fetchUsers = async () => {
     try {
-      const res = await axios.get(
-        "http://localhost:5000/api/invitations/team",
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        },
-      );
+      const res = await axiosInstance.get("/invitations/team");
       setUsers(res.data);
     } catch (error) {
       console.error("Error fetching users:", error);
@@ -173,9 +165,7 @@ const Dashboard = () => {
 
   const fetchStats = async () => {
     try {
-      const res = await axios.get("http://localhost:5000/api/tasks/stats", {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      const res = await axiosInstance.get("/tasks/stats");
       setStats({
         activeTasks: res.data.totalActiveTasks || 0,
         resolvedTasks: res.data.totalCompletedTasks || 0,
@@ -188,9 +178,7 @@ const Dashboard = () => {
 
   const fetchRecentTasks = async () => {
     try {
-      const res = await axios.get("http://localhost:5000/api/tasks/recent", {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      const res = await axiosInstance.get("/tasks/recent");
       setRecentTasks(res.data);
     } catch (error) {
       console.error("Error fetching recent tasks:", error);
@@ -199,9 +187,7 @@ const Dashboard = () => {
 
   const fetchProjects = async () => {
     try {
-      const res = await axios.get("http://localhost:5000/api/projects", {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      const res = await axiosInstance.get("/projects");
       setProjects(res.data);
     } catch (error) {
       console.error("Error fetching projects:", error);
@@ -210,12 +196,7 @@ const Dashboard = () => {
 
   const fetchUnreadCount = async () => {
     try {
-      const res = await axios.get(
-        "http://localhost:5000/api/notifications/unread-count",
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        },
-      );
+      const res = await axiosInstance.get("/notifications/unread-count");
       setUnreadCount(res.data.count);
     } catch (error) {
       console.error("Error fetching unread count:", error);
@@ -316,7 +297,7 @@ const Dashboard = () => {
             <div className="w-9 h-9 rounded-full bg-main flex items-center justify-center overflow-hidden border border-base shadow-sm">
               {user.profilePhoto ? (
                 <img
-                  src={`http://localhost:5000${user.profilePhoto}`}
+                  src={`${SERVER_URL}${user.profilePhoto}`}
                   alt=""
                   className="w-full h-full object-cover"
                 />

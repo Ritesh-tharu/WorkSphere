@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import axios from "axios";
+import axiosInstance from "../api/axiosInstance";
 import {
   Search,
   Plus,
@@ -51,10 +51,6 @@ const Note = ({ selectedProjectId }) => {
     { name: "Soft Slate", value: "#f1f5f9" }
   ];
 
-  const getHeaders = () => ({
-    headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
-  });
-
   useEffect(() => {
     fetchNotes();
   }, [selectedProjectId, activeFilter]);
@@ -64,10 +60,9 @@ const Note = ({ selectedProjectId }) => {
       setLoading(true);
       const projectParam = selectedProjectId || "all";
       const pinnedParam = activeFilter === "pinned" ? "&pinnedOnly=true" : "";
-      
-      const res = await axios.get(
-        `http://localhost:5000/api/notes?project=${projectParam}${pinnedParam}`,
-        getHeaders()
+
+      const res = await axiosInstance.get(
+        `/notes?project=${projectParam}${pinnedParam}`
       );
       setNotes(res.data);
     } catch (error) {
@@ -80,8 +75,8 @@ const Note = ({ selectedProjectId }) => {
   const handleCreateOrUpdate = async () => {
     // If both are empty, don't save
     if (!noteForm.title.trim() && !noteForm.content.trim()) {
-        alert("Please enter a title or some content for your note.");
-        return;
+      alert("Please enter a title or some content for your note.");
+      return;
     }
 
     try {
@@ -89,30 +84,39 @@ const Note = ({ selectedProjectId }) => {
       const payload = { ...noteForm, title: finalTitle };
 
       if (editingNote) {
-        const res = await axios.put(
-          `http://localhost:5000/api/notes/${editingNote._id}`,
-          payload,
-          getHeaders()
+        const res = await axiosInstance.put(
+          `/notes/${editingNote._id}`,
+          payload
         );
-        setNotes(notes.map(n => n._id === editingNote._id ? res.data : n));
+        setNotes(notes.map((n) => (n._id === editingNote._id ? res.data : n)));
       } else {
-        const res = await axios.post(
-          "http://localhost:5000/api/notes",
-          { ...payload, project: selectedProjectId },
-          getHeaders()
-        );
+        const res = await axiosInstance.post("/notes", {
+          ...payload,
+          project: selectedProjectId,
+        });
         setNotes([res.data, ...notes]);
       }
       alert("Note saved successfully!");
       closeModal();
     } catch (error) {
       console.error("Error saving note:", error);
-      if (error.response && error.response.status === 403 && error.response.data.isLimitReached) {
-        if (window.confirm(error.response.data.message + " \n\nWould you like to upgrade to Premium?")) {
+      if (
+        error.response &&
+        error.response.status === 403 &&
+        error.response.data.isLimitReached
+      ) {
+        if (
+          window.confirm(
+            error.response.data.message + " \n\nWould you like to upgrade to Premium?"
+          )
+        ) {
           window.location.href = "/pricing";
         }
       } else {
-        alert("Error saving note: " + (error.response?.data?.message || error.message));
+        alert(
+          "Error saving note: " +
+            (error.response?.data?.message || error.message)
+        );
       }
     }
   };
@@ -120,8 +124,8 @@ const Note = ({ selectedProjectId }) => {
   const deleteNote = async (id) => {
     if (!window.confirm("Are you sure you want to delete this note?")) return;
     try {
-      await axios.delete(`http://localhost:5000/api/notes/${id}`, getHeaders());
-      setNotes(notes.filter(n => n._id !== id));
+      await axiosInstance.delete(`/notes/${id}`);
+      setNotes(notes.filter((n) => n._id !== id));
     } catch (error) {
       console.error("Error deleting note:", error);
     }
@@ -130,12 +134,8 @@ const Note = ({ selectedProjectId }) => {
   const togglePin = async (e, note) => {
     e.stopPropagation();
     try {
-      const res = await axios.put(
-        `http://localhost:5000/api/notes/${note._id}/toggle-pin`,
-        {},
-        getHeaders()
-      );
-      setNotes(notes.map(n => n._id === note._id ? res.data : n));
+      const res = await axiosInstance.put(`/notes/${note._id}/toggle-pin`, {});
+      setNotes(notes.map((n) => (n._id === note._id ? res.data : n)));
     } catch (error) {
       console.error("Error toggling pin:", error);
     }

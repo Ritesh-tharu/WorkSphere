@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import axios from "axios";
+import axiosInstance from "../api/axiosInstance";
 import {
   Plus,
   MoreHorizontal,
@@ -41,9 +41,6 @@ const ProjectManager = ({ initialSelectedId, globalSearch }) => {
     visibility: "Workspace"
   });
 
-  const token = localStorage.getItem("token");
-  const headers = { headers: { Authorization: `Bearer ${token}` } };
-
   const VISIBILITY_OPTIONS = [
     { id: 'Private', label: 'Private', description: 'Only board members can see and edit this board.' },
     { id: 'Workspace', label: 'Workspace', description: 'All members of the workspace can see and edit this board.' },
@@ -73,7 +70,7 @@ const ProjectManager = ({ initialSelectedId, globalSearch }) => {
   const fetchProjects = async () => {
     try {
       setLoading(true);
-      const res = await axios.get("http://localhost:5000/api/projects", headers);
+      const res = await axiosInstance.get("/projects");
       setProjects(res.data);
     } catch (error) {
       console.error("Error fetching projects:", error);
@@ -94,11 +91,11 @@ const ProjectManager = ({ initialSelectedId, globalSearch }) => {
 
       if (editingProject) {
         // UPDATE MODE
-        const res = await axios.put(`http://localhost:5000/api/projects/${editingProject._id}`, submission, headers);
+        const res = await axiosInstance.put(`/projects/${editingProject._id}`, submission);
         setProjects(projects.map(p => p._id === editingProject._id ? res.data : p));
       } else {
         // CREATE MODE
-        const res = await axios.post("http://localhost:5000/api/projects", submission, headers);
+        const res = await axiosInstance.post("/projects", submission);
         setProjects([res.data, ...projects]);
         setActiveBoardId(res.data._id);
       }
@@ -121,7 +118,7 @@ const ProjectManager = ({ initialSelectedId, globalSearch }) => {
   const handleDeleteProject = async (projectId) => {
     if (!window.confirm("Are you sure? This will permanently delete the board and all its tasks.")) return;
     try {
-      await axios.delete(`http://localhost:5000/api/projects/${projectId}`, headers);
+      await axiosInstance.delete(`/projects/${projectId}`);
       setProjects(projects.filter(p => p._id !== projectId));
       setActiveMenuId(null);
     } catch (error) {

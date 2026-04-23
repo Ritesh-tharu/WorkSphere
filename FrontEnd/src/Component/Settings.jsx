@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import axios from "axios";
+import axiosInstance from "../api/axiosInstance";
 import { useNavigate } from "react-router-dom";
 import {
   User,
@@ -53,8 +53,6 @@ const Settings = () => {
     sound: localStorage.getItem("alerts_sound") === "true",
   });
 
-  const token = localStorage.getItem("token");
-
   useEffect(() => {
     const userData = localStorage.getItem("user");
     if (userData) {
@@ -76,7 +74,7 @@ const Settings = () => {
         });
       }
       if (parsedUser.profilePhoto) {
-        setPhotoPreview(`http://localhost:5000${parsedUser.profilePhoto}`);
+        setPhotoPreview(`${import.meta.env.VITE_API_BASE_URL}${parsedUser.profilePhoto}`);
       }
     }
   }, []);
@@ -103,21 +101,26 @@ const Settings = () => {
     setMessage({ type: "", text: "" });
     try {
       const formData = new FormData();
-      Object.keys(user).forEach(key => {
+      Object.keys(user).forEach((key) => {
         if (user[key]) formData.append(key, user[key]);
       });
       if (photoFile) formData.append("profilePhoto", photoFile);
       if (removePhoto) formData.append("removePhoto", "true");
 
-      const res = await axios.put("http://localhost:5000/api/auth/update-profile", formData, {
-        headers: { Authorization: `Bearer ${token}`, "Content-Type": "multipart/form-data" },
+      const res = await axiosInstance.put("/auth/update-profile", formData, {
+        headers: { "Content-Type": "multipart/form-data" },
       });
       localStorage.setItem("user", JSON.stringify(res.data));
       setMessage({ type: "success", text: "Profile updated successfully!" });
     } catch (error) {
       console.error(error);
-      setMessage({ type: "error", text: error.response?.data?.message || "Failed to update profile." });
-    } finally { setLoading(false); }
+      setMessage({
+        type: "error",
+        text: error.response?.data?.message || "Failed to update profile.",
+      });
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handlePasswordChange = async (e) => {
@@ -129,18 +132,25 @@ const Settings = () => {
     setLoading(true);
     setMessage({ type: "", text: "" });
     try {
-      await axios.put("http://localhost:5000/api/auth/change-password", {
+      await axiosInstance.put("/auth/change-password", {
         currentPassword: passwordData.currentPassword,
         newPassword: passwordData.newPassword,
-      }, {
-        headers: { Authorization: `Bearer ${token}` },
       });
       setMessage({ type: "success", text: "Password updated successfully!" });
-      setPasswordData({ currentPassword: "", newPassword: "", confirmPassword: "" });
+      setPasswordData({
+        currentPassword: "",
+        newPassword: "",
+        confirmPassword: "",
+      });
     } catch (error) {
       console.error(error);
-      setMessage({ type: "error", text: error.response?.data?.message || "Failed to update password." });
-    } finally { setLoading(false); }
+      setMessage({
+        type: "error",
+        text: error.response?.data?.message || "Failed to update password.",
+      });
+    } finally {
+      setLoading(false);
+    }
   };
 
   const TABS = [
@@ -159,24 +169,36 @@ const Settings = () => {
   const handleAlertToggle = async (type) => {
     if (type === "desktop" && !alerts.desktop) {
       if (!("Notification" in window)) {
-        setMessage({ type: "error", text: "This browser DOES NOT support desktop notifications." });
+        setMessage({
+          type: "error",
+          text: "This browser DOES NOT support desktop notifications.",
+        });
         return;
       }
 
       if (Notification.permission === "denied") {
-        setMessage({ type: "error", text: "Notifications are BLOCKED by your browser. Please unblock them in the address bar (lock icon) to enable alerts." });
+        setMessage({
+          type: "error",
+          text: "Notifications are BLOCKED by your browser. Please unblock them in the address bar (lock icon) to enable alerts.",
+        });
         return;
       }
 
       try {
         const permission = await Notification.requestPermission();
         if (permission !== "granted") {
-          setMessage({ type: "error", text: "Permission was not granted for notifications." });
+          setMessage({
+            type: "error",
+            text: "Permission was not granted for notifications.",
+          });
           return;
         }
       } catch (err) {
         console.error("Notification permission request failed:", err);
-        setMessage({ type: "error", text: "Failed to request notification permission." });
+        setMessage({
+          type: "error",
+          text: "Failed to request notification permission.",
+        });
         return;
       }
     }
@@ -186,14 +208,15 @@ const Settings = () => {
 
     // Persist to backend
     try {
-      const res = await axios.put("http://localhost:5000/api/auth/update-profile", {
-        notificationPreferences: newAlerts
-      }, {
-        headers: { Authorization: `Bearer ${token}` }
+      const res = await axiosInstance.put("/auth/update-profile", {
+        notificationPreferences: newAlerts,
       });
       localStorage.setItem("user", JSON.stringify(res.data));
       if (newAlerts.desktop && type === "desktop") {
-        new Notification("WorkSphere", { body: "Desktop notifications are now active!", icon: "/favicon.ico" });
+        new Notification("WorkSphere", {
+          body: "Desktop notifications are now active!",
+          icon: "/favicon.ico",
+        });
       }
     } catch (error) {
       console.error("Failed to save alert settings:", error);

@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import axios from "axios";
+import axiosInstance from "../api/axiosInstance";
 import {
   X,
   Plus,
@@ -89,11 +89,6 @@ export default function TaskModal({
   const [showAssigneeDropdown, setShowAssigneeDropdown] = useState(false);
   const [showLabelPicker, setShowLabelPicker] = useState(false);
 
-  const getHeaders = () => ({
-    headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
-  });
-  const base = "http://localhost:5000/api/tasks";
-
   const patch = (fields) => setEditedTask((prev) => ({ ...prev, ...fields }));
 
   const [saved, setSaved] = useState(false);
@@ -122,10 +117,10 @@ export default function TaskModal({
       let res;
       if (task?._id) {
         // Update existing task
-        res = await axios.put(`${base}/${task._id}`, payload, getHeaders());
+        res = await axiosInstance.put(`/tasks/${task._id}`, payload);
       } else {
         // Create new task
-        res = await axios.post(base, payload, getHeaders());
+        res = await axiosInstance.post("/tasks", payload);
       }
 
       const { data } = res;
@@ -139,8 +134,16 @@ export default function TaskModal({
       }, 800);
     } catch (err) {
       console.error("Save failed:", err);
-      if (err.response && err.response.status === 403 && err.response.data.isLimitReached) {
-        if (window.confirm(err.response.data.message + " \n\nWould you like to upgrade to Premium?")) {
+      if (
+        err.response &&
+        err.response.status === 403 &&
+        err.response.data.isLimitReached
+      ) {
+        if (
+          window.confirm(
+            err.response.data.message + " \n\nWould you like to upgrade to Premium?"
+          )
+        ) {
           window.location.href = "/pricing";
         }
       } else {
@@ -154,13 +157,13 @@ export default function TaskModal({
   const handleDelete = async () => {
     if (
       !window.confirm(
-        "Are you sure you want to delete this task? This action cannot be undone.",
+        "Are you sure you want to delete this task? This action cannot be undone."
       )
     )
       return;
     setLoading(true);
     try {
-      await axios.delete(`${base}/${task._id}`, getHeaders());
+      await axiosInstance.delete(`/tasks/${task._id}`);
       if (onUpdate) onUpdate();
       onClose();
     } catch (err) {
@@ -173,11 +176,9 @@ export default function TaskModal({
   const handleAddComment = async () => {
     if (!newComment.trim()) return;
     try {
-      const { data } = await axios.post(
-        `${base}/${task._id}/comments`,
-        { content: newComment },
-        getHeaders(),
-      );
+      const { data } = await axiosInstance.post(`/tasks/${task._id}/comments`, {
+        content: newComment,
+      });
       patch({ comments: [...(editedTask.comments || []), data] });
       setNewComment("");
       if (onUpdate) onUpdate();
@@ -189,11 +190,9 @@ export default function TaskModal({
   const handleAddCheckItem = async () => {
     if (!newCheckItem.trim()) return;
     try {
-      const { data } = await axios.post(
-        `${base}/${task._id}/checklist`,
-        { text: newCheckItem },
-        getHeaders(),
-      );
+      const { data } = await axiosInstance.post(`/tasks/${task._id}/checklist`, {
+        text: newCheckItem,
+      });
       patch({ checklist: [...(editedTask.checklist || []), data] });
       setNewCheckItem("");
       if (onUpdate) onUpdate();
@@ -204,19 +203,18 @@ export default function TaskModal({
 
   const handleToggle = async (itemId) => {
     try {
-      const { data } = await axios.put(
-        `${base}/${task._id}/checklist/${itemId}/toggle`,
-        {},
-        getHeaders(),
+      const { data } = await axiosInstance.put(
+        `/tasks/${task._id}/checklist/${itemId}/toggle`,
+        {}
       );
       const newCheck = (editedTask.checklist || []).map((i) =>
-        i._id === itemId ? data : i,
+        i._id === itemId ? data : i
       );
-      
+
       // Prevent manual toggle for milestone items if they match status names
       // But for now, we'll allow it if they want, but we should probably inform them.
       // Actually, per plan, I'll make it system-driven.
-      
+
       patch({ checklist: newCheck });
       if (onUpdate) onUpdate();
     } catch (err) {
@@ -227,11 +225,7 @@ export default function TaskModal({
   const handleArchive = async () => {
     setLoading(true);
     try {
-      await axios.put(
-        `${base}/${task._id}/archive`,
-        { archive: true },
-        getHeaders(),
-      );
+      await axiosInstance.put(`/tasks/${task._id}/archive`, { archive: true });
       if (onUpdate) onUpdate();
       onClose();
     } catch (err) {

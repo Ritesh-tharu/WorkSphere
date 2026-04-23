@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import axios from "axios";
+import axiosInstance from "../api/axiosInstance";
 import { Mail, UserPlus, CheckCircle2, Clock, X, Shield, User, Send, MoreHorizontal, Trash2 } from "lucide-react";
 
 const Team = () => {
@@ -9,8 +9,6 @@ const Team = () => {
   const [loading, setLoading] = useState(false);
   const [showInviteModal, setShowInviteModal] = useState(false);
 
-  const token = localStorage.getItem("token");
-
   useEffect(() => {
     fetchInvitations();
     fetchTeamMembers();
@@ -18,18 +16,14 @@ const Team = () => {
 
   const fetchInvitations = async () => {
     try {
-      const res = await axios.get("http://localhost:5000/api/invitations/list", {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      const res = await axiosInstance.get("/invitations/list");
       setInvitations(res.data);
     } catch (error) { console.error(error); }
   };
 
   const fetchTeamMembers = async () => {
     try {
-      const res = await axios.get("http://localhost:5000/api/invitations/team", {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      const res = await axiosInstance.get("/invitations/team");
       setTeamMembers(res.data);
     } catch (error) { console.error(error); }
   };
@@ -38,11 +32,7 @@ const Team = () => {
     e.preventDefault();
     setLoading(true);
     try {
-      await axios.post(
-        "http://localhost:5000/api/invitations/send",
-        { email },
-        { headers: { Authorization: `Bearer ${token}` } },
-      );
+      await axiosInstance.post("/invitations/send", { email });
       setEmail("");
       setShowInviteModal(false);
       fetchInvitations();
@@ -52,9 +42,7 @@ const Team = () => {
   const handleRemoveMember = async (id) => {
     if (!window.confirm("Are you sure you want to remove this member from your team?")) return;
     try {
-      await axios.delete(`http://localhost:5000/api/invitations/team/${id}`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      await axiosInstance.delete(`/invitations/team/${id}`);
       fetchTeamMembers();
     } catch (error) { console.error(error); }
   };
@@ -62,9 +50,7 @@ const Team = () => {
   const handleCancelInvite = async (id) => {
     if (!window.confirm("Are you sure you want to cancel this invitation?")) return;
     try {
-      await axios.delete(`http://localhost:5000/api/invitations/${id}`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      await axiosInstance.delete(`/invitations/${id}`);
       fetchInvitations();
     } catch (error) { console.error(error); }
   };

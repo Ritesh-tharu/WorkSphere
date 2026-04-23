@@ -1,8 +1,7 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { CheckIcon, XMarkIcon, SparklesIcon } from '@heroicons/react/24/outline';
-import axios from 'axios';
-import { API_BASE_URL } from '../config';
+import axiosInstance from '../api/axiosInstance';
 
 const Pricing = () => {
   const [loading, setLoading] = useState(false);
@@ -51,12 +50,10 @@ const Pricing = () => {
   const handleUpgrade = async () => {
     try {
       setLoading(true);
-      const token = localStorage.getItem('token');
       
-      const response = await axios.post(`${API_BASE_URL}/api/payments/initiate`, 
-        { amount: 10 },
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
+      const response = await axiosInstance.post("/payments/initiate", {
+        amount: 10,
+      });
 
       if (response.data.success) {
         const { url, formData } = response.data;

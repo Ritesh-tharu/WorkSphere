@@ -14,6 +14,7 @@ import {
   Globe
 } from "lucide-react";
 import { GoogleLogin } from "@react-oauth/google";
+import axiosInstance from "../api/axiosInstance";
 
 const Signup = () => {
   const navigate = useNavigate();
@@ -122,27 +123,29 @@ const Signup = () => {
     setLoading(true);
     setSubmitError("");
     try {
-      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/auth/google`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ idToken: credentialResponse.credential }),
+      const response = await axiosInstance.post("/auth/google", {
+        idToken: credentialResponse.credential,
       });
-      const data = await response.json();
-      if (response.ok) {
-        if (data.requiresVerification) {
-          setSuccess(true);
-          setTimeout(() => navigate("/verify-otp", { state: { email: data.email, redirectTo: "/dashboard" } }), 1500);
-          return;
-        }
-        localStorage.setItem("token", data.token);
-        localStorage.setItem("user", JSON.stringify(data));
+      const data = response.data;
+      if (data.requiresVerification) {
         setSuccess(true);
-        setTimeout(() => navigate("/dashboard"), 1500);
-      } else {
-        setSubmitError(data.message || "Google registration failed.");
+        setTimeout(
+          () =>
+            navigate("/verify-otp", {
+              state: { email: data.email, redirectTo: "/dashboard" },
+            }),
+          1500
+        );
+        return;
       }
+      localStorage.setItem("token", data.token);
+      localStorage.setItem("user", JSON.stringify(data));
+      setSuccess(true);
+      setTimeout(() => navigate("/dashboard"), 1500);
     } catch (err) {
-      setSubmitError("Failed to synchronize with Google gateway.");
+      setSubmitError(
+        err.response?.data?.message || "Google registration failed."
+      );
     } finally {
       setLoading(false);
     }
@@ -150,10 +153,10 @@ const Signup = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
+
     // Final validation check
     const newErrors = {};
-    Object.keys(formData).forEach(key => {
+    Object.keys(formData).forEach((key) => {
       const error = validateField(key, formData[key]);
       if (error) newErrors[key] = error;
     });
@@ -165,25 +168,25 @@ const Signup = () => {
 
     setLoading(true);
     try {
-      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/auth/signup`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          name: formData.name,
-          email: formData.email,
-          password: formData.password,
-          phoneNumber: formData.phoneNumber,
-        }),
+      const response = await axiosInstance.post("/auth/signup", {
+        name: formData.name,
+        email: formData.email,
+        password: formData.password,
+        phoneNumber: formData.phoneNumber,
       });
-      const data = await response.json();
-      if (response.ok) {
-        setSuccess(true);
-        setTimeout(() => navigate("/verify-otp", { state: { email: formData.email, redirectTo: "/login" } }), 2000);
-      } else {
-        setSubmitError(data.message || "Registration failed. Please check your details.");
-      }
+      setSuccess(true);
+      setTimeout(
+        () =>
+          navigate("/verify-otp", {
+            state: { email: formData.email, redirectTo: "/login" },
+          }),
+        2000
+      );
     } catch (err) {
-      setSubmitError("Network synchronization failed. Please try again.");
+      setSubmitError(
+        err.response?.data?.message ||
+          "Registration failed. Please check your details."
+      );
     } finally {
       setLoading(false);
     }
@@ -241,7 +244,7 @@ const Signup = () => {
             <div className="flex flex-col gap-3">
               <GoogleLogin
                 onSuccess={handleGoogleSuccess}
-                onError={() => setStatus({ type: "error", message: "Google Signup Failed" })}
+                onError={() => setSubmitError("Google Signup Failed")}
                 theme="outline"
                 shape="pill"
                 size="large"
