@@ -200,6 +200,15 @@ exports.createTask = async (req, res) => {
       labels,
     } = req.body;
 
+    if (dueDate) {
+      const selectedDate = new Date(dueDate);
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      if (selectedDate < today) {
+        return res.status(400).json({ message: "Due date cannot be in the past" });
+      }
+    }
+
     // Check task limit for free users
     if (req.user.plan === "free") {
       const taskCount = await Task.countDocuments({ user: userId });
@@ -295,6 +304,15 @@ exports.updateTask = async (req, res) => {
       const { assignedTo: resolvedId, pendingAssigneeEmail } = await resolveAssignee(updates.assignedTo, userId);
       updates.assignedTo = resolvedId;
       updates.pendingAssigneeEmail = pendingAssigneeEmail;
+    }
+
+    if (updates.dueDate) {
+      const selectedDate = new Date(updates.dueDate);
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      if (selectedDate < today) {
+        return res.status(400).json({ message: "Due date cannot be in the past" });
+      }
     }
 
     // Track changes for activity log

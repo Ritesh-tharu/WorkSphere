@@ -74,6 +74,16 @@ exports.createEvent = async (req, res) => {
       reminders,
       recurrence,
     } = req.body;
+
+    if (startDate) {
+      const selectedDate = new Date(startDate);
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      if (selectedDate < today) {
+        return res.status(400).json({ message: "Start date cannot be in the past" });
+      }
+    }
+
     const userId = req.user.id;
 
     // Check reminder limit for free users
@@ -137,6 +147,15 @@ exports.updateEvent = async (req, res) => {
 
     if (!event) {
       return res.status(404).json({ message: "Event not found" });
+    }
+
+    if (req.body.startDate) {
+      const selectedDate = new Date(req.body.startDate);
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      if (selectedDate < today) {
+        return res.status(400).json({ message: "Start date cannot be in the past" });
+      }
     }
 
     Object.assign(event, req.body);

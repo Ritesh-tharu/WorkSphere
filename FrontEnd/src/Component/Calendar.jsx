@@ -71,6 +71,15 @@ const Calendar = ({ onEventClick }) => {
             : [],
       };
 
+      const start = new Date(eventData.startDate);
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+
+      if (start < today) {
+        alert("Cannot schedule events in the past.");
+        return;
+      }
+
       if (editingEvent) {
         const res = await axiosInstance.put(
           `/calendar/${editingEvent._id}`,
@@ -151,6 +160,10 @@ const Calendar = ({ onEventClick }) => {
 
   const handleDateClick = (date) => {
     if (date) {
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      if (date < today) return; // Prevent clicking past dates
+
       setSelectedDate(date);
       setEditingEvent(null);
       setNewEvent({
@@ -218,11 +231,11 @@ const Calendar = ({ onEventClick }) => {
                   <div
                     key={i}
                     onClick={() => handleDateClick(date)}
-                    className={`min-h-[120px] p-3 border-r border-b border-slate-100 transition-all cursor-pointer group hover:bg-slate-50/50 ${!date ? 'bg-slate-50/30' : ''}`}
+                    className={`min-h-[120px] p-3 border-r border-b border-slate-100 transition-all cursor-pointer group hover:bg-slate-50/50 ${!date ? 'bg-slate-50/30' : ''} ${date && date < new Date().setHours(0,0,0,0) ? 'opacity-50 cursor-not-allowed grayscale-[0.5]' : ''}`}
                   >
                     {date && (
                       <div className="space-y-2">
-                        <div className={`text-xs font-bold w-7 h-7 flex items-center justify-center rounded-xl transition-all ${isToday(date) ? 'bg-slate-900 text-white shadow-md' : 'text-slate-400 group-hover:text-slate-900'}`}>
+                        <div className={`text-xs font-bold w-7 h-7 flex items-center justify-center rounded-xl transition-all ${isToday(date) ? 'bg-slate-900 text-white shadow-md' : 'text-slate-400 group-hover:text-slate-900'} ${date < new Date().setHours(0,0,0,0) ? 'text-slate-300' : ''}`}>
                           {date.getDate()}
                         </div>
                         <div className="space-y-1">
@@ -293,11 +306,11 @@ const Calendar = ({ onEventClick }) => {
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block">Start Date</label>
-                  <input type="date" className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm text-slate-900 focus:ring-2 focus:ring-slate-900/5 outline-none transition-all font-medium" value={newEvent.startDate} onChange={e => setNewEvent({ ...newEvent, startDate: e.target.value })} />
+                  <input type="date" className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm text-slate-900 focus:ring-2 focus:ring-slate-900/5 outline-none transition-all font-medium" value={newEvent.startDate} min={new Date().toISOString().split("T")[0]} onChange={e => setNewEvent({ ...newEvent, startDate: e.target.value })} />
                 </div>
                 <div className="space-y-2">
                   <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block">End Date</label>
-                  <input type="date" className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm text-slate-900 focus:ring-2 focus:ring-slate-900/5 outline-none transition-all font-medium" value={newEvent.endDate} onChange={e => setNewEvent({ ...newEvent, endDate: e.target.value })} />
+                  <input type="date" className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm text-slate-900 focus:ring-2 focus:ring-slate-900/5 outline-none transition-all font-medium" value={newEvent.endDate} min={new Date().toISOString().split("T")[0]} onChange={e => setNewEvent({ ...newEvent, endDate: e.target.value })} />
                 </div>
               </div>
 

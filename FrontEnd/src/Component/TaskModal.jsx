@@ -114,6 +114,17 @@ export default function TaskModal({
         labels: editedTask.labels || [],
       };
 
+      if (payload.dueDate) {
+        const selectedDate = new Date(payload.dueDate);
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        if (selectedDate < today) {
+          alert("Due date cannot be in the past.");
+          setLoading(false);
+          return;
+        }
+      }
+
       let res;
       if (task?._id) {
         // Update existing task
@@ -731,6 +742,7 @@ export default function TaskModal({
                   value={
                     editedTask.dueDate ? editedTask.dueDate.split("T")[0] : ""
                   }
+                  min={new Date().toISOString().split("T")[0]}
                   onChange={(e) => patch({ dueDate: e.target.value })}
                 />
                 <Calendar className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none w-4 h-4" />

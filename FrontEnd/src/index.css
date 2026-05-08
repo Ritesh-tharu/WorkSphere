@@ -39,8 +39,15 @@
 }
 
 @layer base {
+
+  *,
+  *::before,
+  *::after {
+    box-sizing: border-box;
+  }
+
   * {
-    @apply border-[var(--border-base)] transition-all duration-300 ease-in-out;
+    @apply transition-all duration-300 ease-in-out;
   }
 
   body {

@@ -92,10 +92,14 @@ const Login = () => {
             <div className="space-y-4">
               <GoogleLogin
                 onSuccess={handleGoogleSuccess}
-                onError={() => setError("Google Login Failed")}
+                onError={() => {
+                  console.error("Google Login Failed. Check if localhost:5173 is whitelisted in Google Cloud Console.");
+                  setError("Google Authentication failed. Please ensure the origin is whitelisted.");
+                }}
                 shape="pill"
                 theme="outline"
                 size="large"
+                text="signin_with"
                 width="360"
               />
               <div className="relative">

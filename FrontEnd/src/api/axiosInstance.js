@@ -12,7 +12,12 @@ axiosInstance.interceptors.request.use(
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     } else {
-      console.warn("API request without token:", config.url);
+      // Don't warn for public authentication routes
+      const publicRoutes = ["/auth/login", "/auth/signup", "/auth/google"];
+      const isPublicRoute = publicRoutes.some(route => config.url.includes(route));
+      if (!isPublicRoute) {
+        console.warn("API request without token:", config.url);
+      }
     }
     return config;
   },

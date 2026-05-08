@@ -244,7 +244,10 @@ const Signup = () => {
             <div className="flex flex-col gap-3">
               <GoogleLogin
                 onSuccess={handleGoogleSuccess}
-                onError={() => setSubmitError("Google Signup Failed")}
+                onError={() => {
+                  console.error("Google Login Failed. Check if localhost:5173 is whitelisted in Google Cloud Console.");
+                  setSubmitError("Google Authentication failed. Please ensure the origin is whitelisted.");
+                }}
                 theme="outline"
                 shape="pill"
                 size="large"

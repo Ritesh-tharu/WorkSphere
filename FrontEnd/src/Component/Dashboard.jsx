@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import axiosInstance from "../api/axiosInstance";
 import { SERVER_URL } from "../config";
@@ -19,6 +20,10 @@ import {
   CheckCircle2,
   ChevronRight,
   ChevronLeft,
+  ShieldCheck,
+  Clock,
+  Crown,
+  CheckCircle,
 } from "lucide-react";
 import {
   ChartBarSquareIcon,
@@ -59,6 +64,35 @@ const Dashboard = () => {
   const [globalSearch, setGlobalSearch] = useState("");
   const [globalSearchResults, setGlobalSearchResults] = useState({ tasks: [], projects: [], users: [], notes: [] });
   const [searchLoading, setSearchLoading] = useState(false);
+  const [showProfileDetails, setShowProfileDetails] = useState(false);
+  const profileRef = useRef(null);
+
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (profileRef.current && !profileRef.current.contains(event.target)) {
+        setShowProfileDetails(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  const getDaysLeft = (expiryDate) => {
+    if (!expiryDate) return 0;
+    const today = new Date();
+    const expiry = new Date(expiryDate);
+    const diffTime = expiry - today;
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    return diffDays > 0 ? diffDays : 0;
+  };
+
+  const premiumFeatures = [
+    "Unlimited Projects",
+    "Unlimited Team Members",
+    "Priority Support",
+    "Advanced Analytics",
+    "Custom Project Themes",
+  ];
 
   useEffect(() => {
     // Global Keyboard Shortcuts (CMD+K / CTRL+K for search)
@@ -293,36 +327,110 @@ const Dashboard = () => {
         </nav>
 
         <div className="p-4 border-t border-base bg-sidebar/50">
-          <div className="flex items-center gap-3 mb-4">
-            <div className="w-9 h-9 rounded-full bg-main flex items-center justify-center overflow-hidden border border-base shadow-sm">
-              {user.profilePhoto ? (
-                <img
-                  src={`${SERVER_URL}${user.profilePhoto}`}
-                  alt=""
-                  className="w-full h-full object-cover"
-                />
-              ) : (
-                <User className="text-secondary w-5 h-5" />
+          <div className="relative" ref={profileRef}>
+            <AnimatePresence>
+              {showProfileDetails && (
+                <motion.div
+                  initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                  animate={{ opacity: 1, y: 0, scale: 1 }}
+                  exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                  className="absolute bottom-full left-0 w-64 mb-4 bg-card border border-base rounded-2xl shadow-2xl z-[100] overflow-hidden backdrop-blur-xl"
+                >
+                  <div className="p-4 bg-gradient-to-br from-indigo-600 to-violet-700 text-white">
+                    <div className="flex items-center justify-between mb-2">
+                      <div className="flex items-center gap-2">
+                        <div className="p-1.5 bg-white/20 rounded-lg">
+                          <User className="w-4 h-4" />
+                        </div>
+                        <span className="text-xs font-bold uppercase tracking-widest">Profile</span>
+                      </div>
+                      {user.role === "admin" && (
+                        <div className="flex items-center gap-1 bg-emerald-500/30 px-2 py-0.5 rounded-full border border-emerald-400/30">
+                          <ShieldCheck className="w-3 h-3" />
+                          <span className="text-[10px] font-black uppercase">Admin</span>
+                        </div>
+                      )}
+                    </div>
+                    <p className="text-lg font-black tracking-tight">{user.name}</p>
+                    <p className="text-xs opacity-70 truncate">{user.email}</p>
+                  </div>
+
+                  <div className="p-4 space-y-4">
+                    {user.plan === "premium" ? (
+                      <>
+                        <div className="flex items-center justify-between bg-amber-50 dark:bg-amber-500/10 p-3 rounded-xl border border-amber-200/50 dark:border-amber-500/20">
+                          <div className="flex items-center gap-2">
+                            <Clock className="w-4 h-4 text-amber-600" />
+                            <span className="text-xs font-bold text-amber-900 dark:text-amber-200">Days Remaining</span>
+                          </div>
+                          <span className="text-lg font-black text-amber-600">{getDaysLeft(user.subscriptionExpires)}</span>
+                        </div>
+
+                        <div className="space-y-2">
+                          <p className="text-[10px] font-black text-secondary uppercase tracking-[0.2em]">Premium Benefits</p>
+                          <div className="space-y-1.5">
+                            {premiumFeatures.map((f, i) => (
+                              <div key={i} className="flex items-center gap-2">
+                                <CheckCircle className="w-3 h-3 text-indigo-500" />
+                                <span className="text-[11px] font-medium text-primary/80">{f}</span>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      </>
+                    ) : (
+                      <div className="text-center py-2">
+                        <p className="text-xs text-secondary mb-3">Upgrade to unlock all features</p>
+                        <button
+                          onClick={() => {
+                            setShowProfileDetails(false);
+                            navigate("/pricing");
+                          }}
+                          className="w-full py-2 bg-indigo-600 text-white rounded-lg text-xs font-bold hover:bg-indigo-700 transition-colors shadow-lg shadow-indigo-600/20"
+                        >
+                          View Plans
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+
+            <div 
+              className={`flex items-center gap-3 mb-4 p-2 -mx-2 rounded-xl transition-all cursor-pointer group ${showProfileDetails ? 'bg-indigo-50 dark:bg-indigo-500/10' : 'hover:bg-main'}`}
+              onClick={() => setShowProfileDetails(!showProfileDetails)}
+            >
+              <div className="w-9 h-9 rounded-full bg-main flex items-center justify-center overflow-hidden border border-base shadow-sm group-hover:border-indigo-500/50 transition-colors">
+                {user.profilePhoto ? (
+                  <img
+                    src={`${SERVER_URL}${user.profilePhoto}`}
+                    alt=""
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  <User className="text-secondary w-5 h-5" />
+                )}
+              </div>
+              {sidebarOpen && (
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2">
+                    <p className="text-sm font-bold truncate text-primary group-hover:text-indigo-600 transition-colors">
+                      {user.name}
+                    </p>
+                    {user.plan === "premium" && (
+                      <span className="bg-gradient-to-r from-amber-400 to-amber-600 text-[8px] font-black text-white px-1.5 py-0.5 rounded-full shadow-sm flex items-center gap-0.5 animate-pulse">
+                        <SparklesIcon className="w-2 h-2" />
+                        PREMIUM
+                      </span>
+                    )}
+                  </div>
+                  <p className="text-[10px] text-secondary truncate">
+                    {user.role === "admin" ? "Administrator" : user.email}
+                  </p>
+                </div>
               )}
             </div>
-            {sidebarOpen && (
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2">
-                  <p className="text-sm font-bold truncate text-primary">
-                    {user.name}
-                  </p>
-                  {user.plan === "premium" && (
-                    <span className="bg-gradient-to-r from-amber-400 to-amber-600 text-[8px] font-black text-white px-1.5 py-0.5 rounded-full shadow-sm flex items-center gap-0.5">
-                      <SparklesIcon className="w-2 h-2" />
-                      PREMIUM
-                    </span>
-                  )}
-                </div>
-                <p className="text-[10px] text-secondary truncate">
-                  {user.email}
-                </p>
-              </div>
-            )}
           </div>
           <button
             onClick={() => {
