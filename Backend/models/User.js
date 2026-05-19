@@ -127,7 +127,7 @@ const userSchema = new mongoose.Schema(
     },
     role: {
       type: String,
-      enum: ["admin", "member"],
+      enum: ["admin", "member", "superadmin"],
       default: "admin",
     },
     teamMembers: [

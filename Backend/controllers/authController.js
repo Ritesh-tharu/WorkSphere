@@ -94,6 +94,7 @@ const verifyOTP = async (req, res) => {
       email: user.email,
       phoneNumber: user.phoneNumber,
       profilePhoto: user.profilePhoto,
+      role: user.role,
       token: generateToken(user._id),
       message: "Account verified successfully.",
     });
@@ -154,6 +155,7 @@ const loginUser = async (req, res) => {
         jobTitle: user.jobTitle,
         bio: user.bio,
         profilePhoto: user.profilePhoto,
+        role: user.role,
         notificationPreferences: user.notificationPreferences,
         token: generateToken(user._id),
       });
@@ -351,6 +353,7 @@ const googleLogin = async (req, res) => {
       jobTitle: user.jobTitle,
       bio: user.bio,
       profilePhoto: user.profilePhoto,
+      role: user.role,
       token: generateToken(user._id),
     });
   } catch (error) {

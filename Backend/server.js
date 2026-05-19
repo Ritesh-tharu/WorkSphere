@@ -37,6 +37,9 @@ uploadDirs.forEach((dir) => {
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
 // ==================== ROUTES ====================
+// Admin Routes
+app.use("/api/admin", require("./routes/adminRoutes"));
+
 // Auth Routes
 app.use("/api/auth", require("./routes/authRoutes"));
 
