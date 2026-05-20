@@ -1,0 +1,10 @@
+{
+  "buildCommand": "npm run build",
+  "outputDirectory": "FrontEnd/dist",
+  "rewrites": [
+    {
+      "source": "/((?!api|uploads).*)",
+      "destination": "/index.html"
+    }
+  ]
+}
