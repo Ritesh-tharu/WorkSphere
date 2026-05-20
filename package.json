@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "scripts": {
     "dev": "npm run dev --prefix FrontEnd",
-    "build": "npm run build --prefix FrontEnd",
+    "build": "npm install --prefix FrontEnd && npm run build --prefix FrontEnd",
     "start": "npm start --prefix Backend"
   },
   "dependencies": {
