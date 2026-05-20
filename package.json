@@ -1,4 +1,11 @@
 {
+  "name": "rites-easy-project-management",
+  "version": "1.0.0",
+  "scripts": {
+    "dev": "npm run dev --prefix FrontEnd",
+    "build": "npm run build --prefix FrontEnd",
+    "start": "npm start --prefix Backend"
+  },
   "dependencies": {
     "lucide-react": "^0.562.0",
     "react-router-dom": "^7.11.0"
