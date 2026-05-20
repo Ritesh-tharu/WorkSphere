@@ -20,6 +20,7 @@
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
     "react-router-dom": "^7.11.0",
+    "rites-easy-project-management": "file:..",
     "yup": "^1.7.1"
   },
   "devDependencies": {
@@ -35,9 +36,6 @@
     "globals": "^16.5.0",
     "postcss": "^8.5.6",
     "tailwindcss": "^4.1.18",
-    "vite": "npm:rolldown-vite@7.2.5"
-  },
-  "overrides": {
-    "vite": "npm:rolldown-vite@7.2.5"
+    "vite": "^6.2.0"
   }
 }
