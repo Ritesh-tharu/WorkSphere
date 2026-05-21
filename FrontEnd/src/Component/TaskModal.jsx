@@ -27,6 +27,8 @@ import {
 } from "@heroicons/react/24/solid";
 import { DragDropContext, Droppable, Draggable } from "@hello-pangea/dnd";
 import TaskAttachments from "./TaskAttachments";
+import PremiumLimitModal from "./PremiumLimitModal";
+import CustomDialog from "./CustomDialog";
 
 const PRIORITY_CONFIG = {
   Low: {
@@ -92,6 +94,16 @@ export default function TaskModal({
   const patch = (fields) => setEditedTask((prev) => ({ ...prev, ...fields }));
 
   const [saved, setSaved] = useState(false);
+  const [showPremiumModal, setShowPremiumModal] = useState(false);
+  const [premiumModalMessage, setPremiumModalMessage] = useState("");
+  const [confirmDialog, setConfirmDialog] = useState({
+    isOpen: false,
+    title: "",
+    message: "",
+    type: "confirm",
+    confirmText: "Confirm",
+    onConfirm: null,
+  });
 
   const handleSave = async () => {
     setLoading(true);
@@ -119,7 +131,14 @@ export default function TaskModal({
         const today = new Date();
         today.setHours(0, 0, 0, 0);
         if (selectedDate < today) {
-          alert("Due date cannot be in the past.");
+          setConfirmDialog({
+            isOpen: true,
+            title: "Invalid Date",
+            message: "Due date cannot be in the past.",
+            type: "warning",
+            confirmText: "OK",
+            onConfirm: () => setConfirmDialog((prev) => ({ ...prev, isOpen: false })),
+          });
           setLoading(false);
           return;
         }
@@ -150,38 +169,44 @@ export default function TaskModal({
         err.response.status === 403 &&
         err.response.data.isLimitReached
       ) {
-        if (
-          window.confirm(
-            err.response.data.message + " \n\nWould you like to upgrade to Premium?"
-          )
-        ) {
-          window.location.href = "/pricing";
-        }
+        setPremiumModalMessage(err.response.data.message);
+        setShowPremiumModal(true);
       } else {
-        alert(task?._id ? "Update failed." : "Creation failed.");
+        setConfirmDialog({
+          isOpen: true,
+          title: "Save Failed",
+          message: task?._id ? "Update failed. Please try again." : "Creation failed. Please try again.",
+          type: "warning",
+          confirmText: "OK",
+          onConfirm: () => setConfirmDialog((prev) => ({ ...prev, isOpen: false })),
+        });
       }
     } finally {
       setLoading(false);
     }
   };
 
-  const handleDelete = async () => {
-    if (
-      !window.confirm(
-        "Are you sure you want to delete this task? This action cannot be undone."
-      )
-    )
-      return;
-    setLoading(true);
-    try {
-      await axiosInstance.delete(`/tasks/${task._id}`);
-      if (onUpdate) onUpdate();
-      onClose();
-    } catch (err) {
-      console.error("Delete failed:", err);
-    } finally {
-      setLoading(false);
-    }
+  const handleDelete = () => {
+    setConfirmDialog({
+      isOpen: true,
+      title: "Delete Task",
+      message: "Are you sure you want to delete this task? This action cannot be undone.",
+      type: "danger",
+      confirmText: "Delete Task",
+      onConfirm: async () => {
+        setLoading(true);
+        try {
+          await axiosInstance.delete(`/tasks/${task._id}`);
+          if (onUpdate) onUpdate();
+          onClose();
+        } catch (error) {
+          console.error(error);
+        } finally {
+          setLoading(false);
+        }
+        setConfirmDialog((prev) => ({ ...prev, isOpen: false }));
+      },
+    });
   };
 
   const handleAddComment = async () => {
@@ -803,6 +828,25 @@ export default function TaskModal({
           </div>
         </footer>
       </div>
+      
+      {/* Premium Limit Reached Popup */}
+      <PremiumLimitModal
+        isOpen={showPremiumModal}
+        onClose={() => setShowPremiumModal(false)}
+        title="Limit Reached"
+        message={premiumModalMessage}
+      />
+
+      {/* Custom Dialog Alert/Confirm */}
+      <CustomDialog
+        isOpen={confirmDialog.isOpen}
+        onClose={() => setConfirmDialog((prev) => ({ ...prev, isOpen: false }))}
+        title={confirmDialog.title}
+        message={confirmDialog.message}
+        type={confirmDialog.type}
+        confirmText={confirmDialog.confirmText}
+        onConfirm={confirmDialog.onConfirm}
+      />
     </div>
   );
 }

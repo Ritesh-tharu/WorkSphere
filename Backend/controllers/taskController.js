@@ -209,16 +209,6 @@ exports.createTask = async (req, res) => {
       }
     }
 
-    // Check task limit for free users
-    if (req.user.plan === "free") {
-      const taskCount = await Task.countDocuments({ user: userId });
-      if (taskCount >= 3) {
-        return res.status(403).json({
-          message: "Task limit reached. Free users can only create 3 tasks across all projects.",
-          isLimitReached: true,
-        });
-      }
-    }
 
     // Get the highest position for the status column
     const lastTask = await Task.findOne({

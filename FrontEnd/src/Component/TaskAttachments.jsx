@@ -12,10 +12,19 @@ import {
   Upload,
   Share2,
 } from "lucide-react";
+import CustomDialog from "./CustomDialog";
 
 const TaskAttachments = ({ taskId, attachments, onUpdate }) => {
   const [uploading, setUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
+  const [confirmDialog, setConfirmDialog] = useState({
+    isOpen: false,
+    title: "",
+    message: "",
+    type: "confirm",
+    confirmText: "Confirm",
+    onConfirm: null,
+  });
 
   const token = localStorage.getItem("token");
 
@@ -49,12 +58,21 @@ const TaskAttachments = ({ taskId, attachments, onUpdate }) => {
     } catch (error) { console.error(error); } finally { setUploading(false); }
   };
 
-  const handleDelete = async (aid) => {
-    if (!window.confirm("Delete this attachment?")) return;
-    try {
-      await axiosInstance.delete(`/uploads/task/${taskId}/${aid}`);
-      onUpdate(attachments.filter((a) => a._id !== aid));
-    } catch (error) { console.error(error); }
+  const handleDelete = (aid) => {
+    setConfirmDialog({
+      isOpen: true,
+      title: "Delete Attachment",
+      message: "Are you sure you want to permanently delete this attachment?",
+      type: "danger",
+      confirmText: "Delete",
+      onConfirm: async () => {
+        try {
+          await axiosInstance.delete(`/uploads/task/${taskId}/${aid}`);
+          onUpdate(attachments.filter((a) => a._id !== aid));
+        } catch (error) { console.error(error); }
+        setConfirmDialog((prev) => ({ ...prev, isOpen: false }));
+      },
+    });
   };
 
   const handleDownload = async (a) => {
@@ -125,6 +143,17 @@ const TaskAttachments = ({ taskId, attachments, onUpdate }) => {
           </div>
         )}
       </div>
+
+      {/* Custom Dialog Alert/Confirm */}
+      <CustomDialog
+        isOpen={confirmDialog.isOpen}
+        onClose={() => setConfirmDialog((prev) => ({ ...prev, isOpen: false }))}
+        title={confirmDialog.title}
+        message={confirmDialog.message}
+        type={confirmDialog.type}
+        confirmText={confirmDialog.confirmText}
+        onConfirm={confirmDialog.onConfirm}
+      />
     </div>
   );
 };

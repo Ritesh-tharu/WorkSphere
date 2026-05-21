@@ -1,47 +1,62 @@
-import React, { useState } from 'react';
-import { motion } from 'framer-motion';
-import { CheckIcon, XMarkIcon, SparklesIcon } from '@heroicons/react/24/outline';
-import axiosInstance from '../api/axiosInstance';
+import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { motion } from "framer-motion";
+import {
+  CheckIcon,
+  XMarkIcon,
+  SparklesIcon,
+} from "@heroicons/react/24/outline";
+import axiosInstance from "../api/axiosInstance";
+import CustomDialog from "./CustomDialog";
 
 const Pricing = () => {
+  const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
+  const [confirmDialog, setConfirmDialog] = useState({
+    isOpen: false,
+    title: "",
+    message: "",
+    type: "info",
+    confirmText: "OK",
+    onConfirm: null,
+  });
 
   const plans = [
     {
-      name: 'Free',
-      price: '0',
-      description: 'Perfect for individuals and small teams starting out.',
+      name: "Free",
+      price: "0",
+      description: "Perfect for individuals and small teams starting out.",
       features: [
-        'Up to 3 active projects',
-        'Up to 5 team members per project',
-        'Basic Task Management',
-        'Calendar View',
-        'Notifications',
+        "Up to 3 active projects",
+        "Up to 5 team members per project",
+        "Basic Task Management",
+        "Calendar View",
+        "Notifications",
       ],
       notIncluded: [
-        'Unlimited Projects',
-        'Unlimited Team Members',
-        'Priority Support',
-        'Advanced Analytics',
+        "Unlimited Projects",
+        "Unlimited Team Members",
+        "Priority Support",
+        "Advanced Analytics",
       ],
-      buttonText: 'Current Plan',
+      buttonText: "Current Plan",
       isPremium: false,
     },
     {
-      name: 'Premium',
-      price: '10',
-      period: '/month',
-      description: 'Advanced features for growing teams and complex projects.',
+      name: "Premium",
+      price: "10",
+      period: "/month",
+      description: "Advanced features for growing teams and complex projects.",
       features: [
-        'Unlimited Projects',
-        'Unlimited Team Members',
-        'Priority Support',
-        'Advanced Analytics',
-        'Custom Project Themes',
-        'Everything in Free',
+        "Unlimited Projects",
+        "Unlimited Team Members",
+        "Priority Support",
+        "Advanced Analytics",
+        "Custom Project Themes",
+        "Everything in Free",
       ],
       notIncluded: [],
-      buttonText: 'Upgrade with eSewa',
+      buttonText: "Upgrade with eSewa",
       isPremium: true,
       popular: true,
     },
@@ -50,22 +65,22 @@ const Pricing = () => {
   const handleUpgrade = async () => {
     try {
       setLoading(true);
-      
+
       const response = await axiosInstance.post("/payments/initiate", {
         amount: 10,
       });
 
       if (response.data.success) {
         const { url, formData } = response.data;
-        
+
         // Create a form and submit it to eSewa
-        const form = document.createElement('form');
-        form.method = 'POST';
+        const form = document.createElement("form");
+        form.method = "POST";
         form.action = url;
 
         for (const key in formData) {
-          const input = document.createElement('input');
-          input.type = 'hidden';
+          const input = document.createElement("input");
+          input.type = "hidden";
           input.name = key;
           input.value = formData[key];
           form.appendChild(input);
@@ -75,8 +90,17 @@ const Pricing = () => {
         form.submit();
       }
     } catch (error) {
-      console.error('Upgrade failed:', error);
-      alert('Failed to initiate payment. Please try again.');
+      console.error("Upgrade failed:", error);
+      setConfirmDialog({
+        isOpen: true,
+        title: "Payment Error",
+        message:
+          "Failed to initiate payment. Please check your connection and try again.",
+        type: "warning",
+        confirmText: "OK",
+        onConfirm: () =>
+          setConfirmDialog((prev) => ({ ...prev, isOpen: false })),
+      });
     } finally {
       setLoading(false);
     }
@@ -85,15 +109,40 @@ const Pricing = () => {
   return (
     <div className="min-h-screen bg-[#0f172a] text-white py-20 px-4">
       <div className="max-w-6xl mx-auto">
-        <div className="text-center mb-16">
-          <motion.h1 
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="text-5xl font-bold bg-gradient-to-r from-blue-400 to-indigo-400 bg-clip-text text-transparent mb-4"
+        <div className="flex items-center justify-between mb-8">
+          <button
+            type="button"
+            onClick={() => navigate(-1)}
+            className="inline-flex items-center gap-2 px-4 py-2 rounded-2xl border border-slate-700 bg-slate-900 text-slate-200 hover:bg-slate-800 transition"
           >
-            Simple, Transparent Pricing
-          </motion.h1>
-          <p className="text-slate-400 text-lg">Choose the plan that's right for your team.</p>
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              className="h-4 w-4"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+              strokeWidth={2}
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                d="M15 19l-7-7 7-7"
+              />
+            </svg>
+            Back
+          </button>
+          <div className="text-center flex-1">
+            <motion.h1
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="text-5xl font-bold bg-gradient-to-r from-blue-400 to-indigo-400 bg-clip-text text-transparent mb-4"
+            >
+              Simple, Transparent Pricing
+            </motion.h1>
+            <p className="text-slate-400 text-lg">
+              Choose the plan that's right for your team.
+            </p>
+          </div>
         </div>
 
         <div className="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto">
@@ -104,9 +153,9 @@ const Pricing = () => {
               animate={{ opacity: 1, x: 0 }}
               transition={{ delay: index * 0.1 }}
               className={`relative p-8 rounded-3xl border ${
-                plan.popular 
-                  ? 'border-blue-500 bg-blue-500/5 shadow-[0_0_40px_rgba(59,130,246,0.1)]' 
-                  : 'border-slate-800 bg-slate-900/50'
+                plan.popular
+                  ? "border-blue-500 bg-blue-500/5 shadow-[0_0_40px_rgba(59,130,246,0.1)]"
+                  : "border-slate-800 bg-slate-900/50"
               } backdrop-blur-xl transition-all hover:scale-[1.02]`}
             >
               {plan.popular && (
@@ -119,7 +168,9 @@ const Pricing = () => {
               <h3 className="text-xl font-semibold mb-2">{plan.name}</h3>
               <div className="flex items-baseline gap-1 mb-4">
                 <span className="text-4xl font-bold">NPR {plan.price}</span>
-                {plan.period && <span className="text-slate-400">{plan.period}</span>}
+                {plan.period && (
+                  <span className="text-slate-400">{plan.period}</span>
+                )}
               </div>
               <p className="text-slate-400 text-sm mb-8 leading-relaxed">
                 {plan.description}
@@ -135,11 +186,16 @@ const Pricing = () => {
                   </div>
                 ))}
                 {plan.notIncluded.map((feature) => (
-                  <div key={feature} className="flex items-start gap-3 opacity-40">
+                  <div
+                    key={feature}
+                    className="flex items-start gap-3 opacity-40"
+                  >
                     <div className="mt-1 p-0.5 rounded-full bg-slate-800 text-slate-500">
                       <XMarkIcon className="w-3.5 h-3.5" />
                     </div>
-                    <span className="text-slate-500 text-sm line-through">{feature}</span>
+                    <span className="text-slate-500 text-sm line-through">
+                      {feature}
+                    </span>
                   </div>
                 ))}
               </div>
@@ -149,11 +205,11 @@ const Pricing = () => {
                 onClick={plan.isPremium ? handleUpgrade : undefined}
                 className={`w-full py-4 rounded-xl font-bold transition-all ${
                   plan.isPremium
-                    ? 'bg-blue-600 hover:bg-blue-500 text-white shadow-lg shadow-blue-500/25 active:scale-95 disabled:opacity-50'
-                    : 'bg-slate-800 text-slate-400 cursor-default'
+                    ? "bg-blue-600 hover:bg-blue-500 text-white shadow-lg shadow-blue-500/25 active:scale-95 disabled:opacity-50"
+                    : "bg-slate-800 text-slate-400 cursor-default"
                 }`}
               >
-                {loading ? 'Processing...' : plan.buttonText}
+                {loading ? "Processing..." : plan.buttonText}
               </button>
             </motion.div>
           ))}
@@ -162,9 +218,26 @@ const Pricing = () => {
         <div className="mt-20 text-center text-slate-500 text-sm">
           <p>Secure payment processing by eSewa</p>
           <div className="flex justify-center gap-4 mt-4 grayscale opacity-50">
-             <img src="https://esewa.com.np/common/images/esewa_logo.png" alt="eSewa" className="h-8 object-contain" />
+            <img
+              src="https://esewa.com.np/common/images/esewa_logo.png"
+              alt="eSewa"
+              className="h-8 object-contain"
+            />
           </div>
         </div>
+
+        {/* Custom Dialog Alert/Confirm */}
+        <CustomDialog
+          isOpen={confirmDialog.isOpen}
+          onClose={() =>
+            setConfirmDialog((prev) => ({ ...prev, isOpen: false }))
+          }
+          title={confirmDialog.title}
+          message={confirmDialog.message}
+          type={confirmDialog.type}
+          confirmText={confirmDialog.confirmText}
+          onConfirm={confirmDialog.onConfirm}
+        />
       </div>
     </div>
   );

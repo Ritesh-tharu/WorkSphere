@@ -5,9 +5,9 @@ const AdminProtectedRoute = () => {
   const token = localStorage.getItem("token");
   const user = JSON.parse(localStorage.getItem("user") || "{}");
 
-  // If no token or the user is not a superadmin, redirect to the login portal
-  if (!token || user.role !== "superadmin") {
-    return <Navigate to="/login" replace />;
+  // If no token or the user is not an admin / superadmin, redirect to the login portal
+  if (!token || !["admin", "superadmin"].includes(user.role)) {
+    return <Navigate to="/admin-login" replace />;
   }
 
   // Render children routes if authorization checks out

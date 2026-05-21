@@ -26,6 +26,7 @@ import {
 import { CheckCircleIcon as CheckCircleIconSolid, EllipsisHorizontalIcon } from "@heroicons/react/24/solid";
 import TaskModal from "./TaskModal";
 import SearchFilters from "./SearchFilters";
+import CustomDialog from "./CustomDialog";
 
 const TaskBoard = ({ selectedProjectId, onBack, globalSearch }) => {
   const [columns, setColumns] = useState({});
@@ -49,6 +50,14 @@ const TaskBoard = ({ selectedProjectId, onBack, globalSearch }) => {
   const [activeMenuCol, setActiveMenuCol] = useState(null);
   const [editingCol, setEditingCol] = useState(null);
   const [tempColName, setTempColName] = useState("");
+  const [confirmDialog, setConfirmDialog] = useState({
+    isOpen: false,
+    title: "",
+    message: "",
+    type: "confirm",
+    confirmText: "Confirm",
+    onConfirm: null,
+  });
 
   const getHeaders = () => ({
     headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
@@ -268,25 +277,33 @@ const TaskBoard = ({ selectedProjectId, onBack, globalSearch }) => {
     saveColumns(newCols);
   };
 
-  const deleteList = async (columnId) => {
+  const deleteList = (columnId) => {
     const column = columns[columnId];
-    if (!window.confirm(`Delete list "${column.name}"?`)) return;
-
-    try {
-      await Promise.all(
-        column.items.map((item) =>
-          axiosInstance.delete(`/tasks/${item._id}`)
-        ),
-      );
-      const newCols = { ...columns };
-      delete newCols[columnId];
-      setColumns(newCols);
-      setActiveMenuCol(null);
-      saveColumns(newCols);
-      fetchProjectStats();
-    } catch (error) {
-      console.error("Error deleting list:", error);
-    }
+    setConfirmDialog({
+      isOpen: true,
+      title: "Delete List",
+      message: `Are you sure you want to delete list "${column.name}"? This will permanently delete all tasks in this list.`,
+      type: "danger",
+      confirmText: "Delete List",
+      onConfirm: async () => {
+        try {
+          await Promise.all(
+            column.items.map((item) =>
+              axiosInstance.delete(`/tasks/${item._id}`)
+            ),
+          );
+          const newCols = { ...columns };
+          delete newCols[columnId];
+          setColumns(newCols);
+          setActiveMenuCol(null);
+          saveColumns(newCols);
+          fetchProjectStats();
+        } catch (error) {
+          console.error("Error deleting list:", error);
+        }
+        setConfirmDialog((prev) => ({ ...prev, isOpen: false }));
+      },
+    });
   };
 
   const renameList = async (columnId) => {
@@ -1008,6 +1025,17 @@ const TaskBoard = ({ selectedProjectId, onBack, globalSearch }) => {
           projects={projects}
         />
       )}
+
+      {/* Custom Dialog Alert/Confirm */}
+      <CustomDialog
+        isOpen={confirmDialog.isOpen}
+        onClose={() => setConfirmDialog((prev) => ({ ...prev, isOpen: false }))}
+        title={confirmDialog.title}
+        message={confirmDialog.message}
+        type={confirmDialog.type}
+        confirmText={confirmDialog.confirmText}
+        onConfirm={confirmDialog.onConfirm}
+      />
     </div>
   );
 };

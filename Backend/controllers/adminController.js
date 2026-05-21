@@ -11,12 +11,13 @@ const getAdminStats = async (req, res) => {
     const totalUsers = await User.countDocuments();
     const premiumUsers = await User.countDocuments({ plan: "premium" });
     const freeUsers = await User.countDocuments({ plan: { $ne: "premium" } });
-    
+
     const totalProjects = await Project.countDocuments();
     const totalTasks = await Task.countDocuments();
-    
+
     // Calculate Conversion Rate
-    const conversionRate = totalUsers > 0 ? ((premiumUsers / totalUsers) * 100).toFixed(1) : 0;
+    const conversionRate =
+      totalUsers > 0 ? ((premiumUsers / totalUsers) * 100).toFixed(1) : 0;
 
     res.json({
       totalUsers,
@@ -45,10 +46,7 @@ const getAllUsers = async (req, res) => {
     // Search filter (Name or Email)
     if (req.query.search) {
       const searchRegex = new RegExp(req.query.search, "i");
-      query.$or = [
-        { name: searchRegex },
-        { email: searchRegex }
-      ];
+      query.$or = [{ name: searchRegex }, { email: searchRegex }];
     }
 
     // Plan Filter
@@ -98,12 +96,15 @@ const updateUser = async (req, res) => {
 
     if (plan) {
       user.plan = plan;
-      
+
       // If upgraded to premium and no specific expiry date is sent, set to 30 days from now
       if (plan === "premium") {
         if (subscriptionExpires) {
           user.subscriptionExpires = new Date(subscriptionExpires);
-        } else if (!user.subscriptionExpires || user.subscriptionExpires < new Date()) {
+        } else if (
+          !user.subscriptionExpires ||
+          user.subscriptionExpires < new Date()
+        ) {
           const defaultExpiry = new Date();
           defaultExpiry.setDate(defaultExpiry.getDate() + 30);
           user.subscriptionExpires = defaultExpiry;
@@ -114,7 +115,7 @@ const updateUser = async (req, res) => {
     }
 
     const updatedUser = await user.save();
-    
+
     // Remove sensitive fields
     const responseUser = updatedUser.toObject();
     delete responseUser.password;
@@ -140,11 +141,69 @@ const deleteUser = async (req, res) => {
 
     // Do not allow deleting yourself!
     if (user._id.toString() === req.user._id.toString()) {
-      return res.status(400).json({ message: "You cannot delete your own superadmin account." });
+      return res
+        .status(400)
+        .json({ message: "You cannot delete your own superadmin account." });
     }
 
     await User.deleteOne({ _id: user._id });
     res.json({ message: "User deleted successfully" });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+// @desc    Get current pricing configuration
+// @route   GET /api/admin/pricing
+// @access  Private/Superadmin
+const getPricing = async (req, res) => {
+  try {
+    const pricing = {
+      freePrice: process.env.FREE_PLAN_PRICE || "0",
+      premiumPrice: process.env.PREMIUM_PLAN_PRICE || "10",
+      premiumPeriod: process.env.PREMIUM_PLAN_PERIOD || "/month",
+    };
+    res.json(pricing);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+// @desc    Update pricing configuration
+// @route   PUT /api/admin/pricing
+// @access  Private/Superadmin
+const updatePricing = async (req, res) => {
+  try {
+    const { freePrice, premiumPrice, premiumPeriod } = req.body;
+
+    // Validate pricing data
+    if (
+      freePrice === undefined ||
+      premiumPrice === undefined ||
+      !premiumPeriod
+    ) {
+      return res
+        .status(400)
+        .json({ message: "All pricing fields are required" });
+    }
+
+    if (isNaN(freePrice) || isNaN(premiumPrice)) {
+      return res.status(400).json({ message: "Prices must be valid numbers" });
+    }
+
+    // Update environment variables (in production, you'd update a database config)
+    process.env.FREE_PLAN_PRICE = freePrice;
+    process.env.PREMIUM_PLAN_PRICE = premiumPrice;
+    process.env.PREMIUM_PLAN_PERIOD = premiumPeriod;
+
+    res.json({
+      message: "Pricing updated successfully",
+      pricing: {
+        freePrice,
+        premiumPrice,
+        premiumPeriod,
+      },
+    });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
@@ -155,4 +214,6 @@ module.exports = {
   getAllUsers,
   updateUser,
   deleteUser,
+  getPricing,
+  updatePricing,
 };

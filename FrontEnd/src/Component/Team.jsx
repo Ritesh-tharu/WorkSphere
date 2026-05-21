@@ -1,6 +1,19 @@
 import React, { useState, useEffect } from "react";
 import axiosInstance from "../api/axiosInstance";
-import { Mail, UserPlus, CheckCircle2, Clock, X, Shield, User, Send, MoreHorizontal, Trash2 } from "lucide-react";
+import {
+  Mail,
+  UserPlus,
+  CheckCircle2,
+  Clock,
+  X,
+  Shield,
+  User,
+  Send,
+  MoreHorizontal,
+  Trash2,
+} from "lucide-react";
+import PremiumLimitModal from "./PremiumLimitModal";
+import CustomDialog from "./CustomDialog";
 
 const Team = () => {
   const [email, setEmail] = useState("");
@@ -8,6 +21,17 @@ const Team = () => {
   const [teamMembers, setTeamMembers] = useState([]);
   const [loading, setLoading] = useState(false);
   const [showInviteModal, setShowInviteModal] = useState(false);
+
+  const [showPremiumModal, setShowPremiumModal] = useState(false);
+  const [premiumModalMessage, setPremiumModalMessage] = useState("");
+  const [confirmDialog, setConfirmDialog] = useState({
+    isOpen: false,
+    title: "",
+    message: "",
+    type: "confirm",
+    confirmText: "Confirm",
+    onConfirm: null,
+  });
 
   useEffect(() => {
     fetchInvitations();
@@ -18,14 +42,18 @@ const Team = () => {
     try {
       const res = await axiosInstance.get("/invitations/list");
       setInvitations(res.data);
-    } catch (error) { console.error(error); }
+    } catch (error) {
+      console.error(error);
+    }
   };
 
   const fetchTeamMembers = async () => {
     try {
       const res = await axiosInstance.get("/invitations/team");
       setTeamMembers(res.data);
-    } catch (error) { console.error(error); }
+    } catch (error) {
+      console.error(error);
+    }
   };
 
   const handleSendInvite = async (e) => {
@@ -36,31 +64,80 @@ const Team = () => {
       setEmail("");
       setShowInviteModal(false);
       fetchInvitations();
-    } catch (error) { console.error(error); } finally { setLoading(false); }
+    } catch (error) {
+      console.error(error);
+      if (
+        error.response &&
+        error.response.status === 403 &&
+        error.response.data.isLimitReached
+      ) {
+        setPremiumModalMessage(error.response.data.message);
+        setShowPremiumModal(true);
+      } else {
+        setConfirmDialog({
+          isOpen: true,
+          title: "Error Sending Invite",
+          message:
+            error.response?.data?.message || "Failed to send invitation.",
+          type: "warning",
+          confirmText: "OK",
+          onConfirm: () =>
+            setConfirmDialog((prev) => ({ ...prev, isOpen: false })),
+        });
+      }
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const handleRemoveMember = async (id) => {
-    if (!window.confirm("Are you sure you want to remove this member from your team?")) return;
-    try {
-      await axiosInstance.delete(`/invitations/team/${id}`);
-      fetchTeamMembers();
-    } catch (error) { console.error(error); }
+  const handleRemoveMember = (id) => {
+    setConfirmDialog({
+      isOpen: true,
+      title: "Remove Member",
+      message: "Are you sure you want to remove this member from your team?",
+      type: "danger",
+      confirmText: "Remove Member",
+      onConfirm: async () => {
+        try {
+          await axiosInstance.delete(`/invitations/team/${id}`);
+          fetchTeamMembers();
+        } catch (error) {
+          console.error(error);
+        }
+        setConfirmDialog((prev) => ({ ...prev, isOpen: false }));
+      },
+    });
   };
 
-  const handleCancelInvite = async (id) => {
-    if (!window.confirm("Are you sure you want to cancel this invitation?")) return;
-    try {
-      await axiosInstance.delete(`/invitations/${id}`);
-      fetchInvitations();
-    } catch (error) { console.error(error); }
+  const handleCancelInvite = (id) => {
+    setConfirmDialog({
+      isOpen: true,
+      title: "Cancel Invitation",
+      message: "Are you sure you want to cancel this invitation?",
+      type: "danger",
+      confirmText: "Cancel Invitation",
+      onConfirm: async () => {
+        try {
+          await axiosInstance.delete(`/invitations/${id}`);
+          fetchInvitations();
+        } catch (error) {
+          console.error(error);
+        }
+        setConfirmDialog((prev) => ({ ...prev, isOpen: false }));
+      },
+    });
   };
 
   return (
     <div className=" p-8 mx-auto space-y-12 animate-in fade-in duration-700">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-8 px-1">
         <div>
-          <h1 className="text-4xl font-black text-gradient tracking-tight mb-2">Team Management</h1>
-          <p className="text-sm font-medium text-secondary">Collaborate with your workspace members and manage invitations.</p>
+          <h1 className="text-4xl font-black text-gradient tracking-tight mb-2">
+            Team Management
+          </h1>
+          <p className="text-sm font-medium text-secondary">
+            Collaborate with your workspace members and manage invitations.
+          </p>
         </div>
         <button
           className="flex items-center gap-3 px-8 py-4 bg-slate-900 dark:bg-indigo-600 text-white rounded-2xl font-black text-xs uppercase tracking-[0.2em] transition-all shadow-xl shadow-indigo-500/10 hover:opacity-90 active:scale-95"
@@ -76,21 +153,31 @@ const Team = () => {
         <div className="lg:col-span-2 space-y-8">
           <div className="flex items-center justify-between px-3">
             <h3 className="text-[11px] font-black text-secondary uppercase tracking-[0.3em] flex items-center gap-3">
-              Active Workspace Members <span className="bg-indigo-500/10 text-indigo-600 px-2 py-0.5 rounded-md">{teamMembers.length}</span>
+              Active Workspace Members{" "}
+              <span className="bg-indigo-500/10 text-indigo-600 px-2 py-0.5 rounded-md">
+                {teamMembers.length}
+              </span>
             </h3>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {teamMembers.map((member) => (
-              <div key={member._id} className="bg-card border border-base rounded-[2rem] p-6 flex items-center gap-5 group shadow-sm hover:shadow-2xl hover:border-indigo-500/30 transition-all relative overflow-hidden">
+              <div
+                key={member._id}
+                className="bg-card border border-base rounded-[2rem] p-6 flex items-center gap-5 group shadow-sm hover:shadow-2xl hover:border-indigo-500/30 transition-all relative overflow-hidden"
+              >
                 <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-500/5 rounded-full blur-[40px] -mr-16 -mt-16 group-hover:bg-indigo-500/10 transition-colors" />
 
                 <div className="w-14 h-14 rounded-2xl bg-main border border-base flex items-center justify-center text-xl font-black text-secondary group-hover:bg-slate-900 dark:group-hover:bg-indigo-600 group-hover:text-white transition-all shadow-inner relative z-10">
                   {member.name.charAt(0)}
                 </div>
                 <div className="flex-1 min-w-0 relative z-10">
-                  <h4 className="text-[15px] font-black text-primary truncate group-hover:text-indigo-600 transition-colors uppercase tracking-tight mb-0.5">{member.name}</h4>
-                  <p className="text-[11px] font-bold text-secondary truncate opacity-70 tracking-wide">{member.email}</p>
+                  <h4 className="text-[15px] font-black text-primary truncate group-hover:text-indigo-600 transition-colors uppercase tracking-tight mb-0.5">
+                    {member.name}
+                  </h4>
+                  <p className="text-[11px] font-bold text-secondary truncate opacity-70 tracking-wide">
+                    {member.email}
+                  </p>
                 </div>
                 <button
                   onClick={() => handleRemoveMember(member._id)}
@@ -104,7 +191,9 @@ const Team = () => {
             {!teamMembers.length && (
               <div className="col-span-full py-24 text-center border-4 border-dashed border-base rounded-[2.5rem] opacity-30 flex flex-col items-center justify-center gap-4">
                 <User size={48} className="text-secondary" />
-                <p className="font-black text-xs uppercase tracking-[0.2em] text-secondary">No active members found</p>
+                <p className="font-black text-xs uppercase tracking-[0.2em] text-secondary">
+                  No active members found
+                </p>
               </div>
             )}
           </div>
@@ -127,26 +216,40 @@ const Team = () => {
             {invitations.length === 0 ? (
               <div className="py-16 flex flex-col items-center justify-center text-center px-6 bg-main/30 rounded-[2rem] border-2 border-dashed border-base">
                 <Mail className="text-indigo-500 mb-6 opacity-20" size={40} />
-                <p className="text-[10px] font-black text-secondary uppercase tracking-[0.2em]">Zero pending links</p>
+                <p className="text-[10px] font-black text-secondary uppercase tracking-[0.2em]">
+                  Zero pending links
+                </p>
               </div>
             ) : (
               invitations.map((inv) => (
-                <div key={inv._id} className="group bg-main/50 border border-base p-5 rounded-[1.5rem] hover:border-indigo-500/40 hover:bg-main transition-all flex items-center justify-between shadow-xs">
+                <div
+                  key={inv._id}
+                  className="group bg-main/50 border border-base p-5 rounded-[1.5rem] hover:border-indigo-500/40 hover:bg-main transition-all flex items-center justify-between shadow-xs"
+                >
                   <div className="flex items-center gap-4 flex-1 min-w-0">
                     <div className="w-11 h-11 rounded-2xl bg-card border border-base flex items-center justify-center text-indigo-500 shadow-sm group-hover:bg-indigo-600 group-hover:text-white transition-all">
                       <Send size={16} />
                     </div>
                     <div className="min-w-0">
-                      <p className="text-[11px] font-black text-primary truncate mb-1 tracking-tight">{inv.email}</p>
+                      <p className="text-[11px] font-black text-primary truncate mb-1 tracking-tight">
+                        {inv.email}
+                      </p>
                       <div className="flex items-center gap-2 text-[9px] font-bold text-secondary uppercase tracking-[0.1em] opacity-60">
                         <Clock size={10} />
-                        <span>Sent {new Date(inv.createdAt).toLocaleDateString()}</span>
+                        <span>
+                          Sent {new Date(inv.createdAt).toLocaleDateString()}
+                        </span>
                       </div>
                     </div>
                   </div>
                   <div className="flex items-center gap-3 pl-2">
-                    <div className={`px-2.5 py-1 rounded-lg text-[9px] font-black uppercase tracking-widest border ${inv.status === "pending" ? "text-amber-600 bg-amber-50 border-amber-200" : "text-emerald-600 bg-emerald-50 border-emerald-200"
-                      }`}>
+                    <div
+                      className={`px-2.5 py-1 rounded-lg text-[9px] font-black uppercase tracking-widest border ${
+                        inv.status === "pending"
+                          ? "text-amber-600 bg-amber-50 border-amber-200"
+                          : "text-emerald-600 bg-emerald-50 border-emerald-200"
+                      }`}
+                    >
                       {inv.status}
                     </div>
                     <button
@@ -166,14 +269,24 @@ const Team = () => {
 
       {/* Invite Modal */}
       {showInviteModal && (
-        <div className="fixed inset-0 z-[110] flex items-center justify-center p-6 bg-slate-900/60 backdrop-blur-md animate-in fade-in duration-500" onClick={() => setShowInviteModal(false)}>
-          <div className="bg-card w-full max-w-lg rounded-[3rem] p-12 shadow-[0_32px_64px_-16px_rgba(0,0,0,0.3)] border border-base animate-in zoom-in-95 duration-300 relative overflow-hidden" onClick={(e) => e.stopPropagation()}>
+        <div
+          className="fixed inset-0 z-[110] flex items-center justify-center p-6 bg-slate-900/60 backdrop-blur-md animate-in fade-in duration-500"
+          onClick={() => setShowInviteModal(false)}
+        >
+          <div
+            className="bg-card w-full max-w-lg rounded-[3rem] p-12 shadow-[0_32px_64px_-16px_rgba(0,0,0,0.3)] border border-base animate-in zoom-in-95 duration-300 relative overflow-hidden"
+            onClick={(e) => e.stopPropagation()}
+          >
             <div className="absolute top-0 right-0 w-64 h-64 bg-indigo-500/5 rounded-full blur-[100px] -mr-32 -mt-32" />
 
             <div className="flex justify-between items-center mb-10 relative z-10">
               <div>
-                <h3 className="text-2xl font-black text-primary tracking-tight mb-2">Send Invitation</h3>
-                <p className="text-sm font-medium text-secondary">Invite a new member to your team.</p>
+                <h3 className="text-2xl font-black text-primary tracking-tight mb-2">
+                  Send Invitation
+                </h3>
+                <p className="text-sm font-medium text-secondary">
+                  Invite a new member to your team.
+                </p>
               </div>
               <button
                 onClick={() => setShowInviteModal(false)}
@@ -183,9 +296,14 @@ const Team = () => {
               </button>
             </div>
 
-            <form onSubmit={handleSendInvite} className="space-y-8 relative z-10">
+            <form
+              onSubmit={handleSendInvite}
+              className="space-y-8 relative z-10"
+            >
               <div className="space-y-4">
-                <label className="text-[10px] font-black text-secondary tracking-[0.2em] uppercase px-2">Recipient Email Address</label>
+                <label className="text-[10px] font-black text-secondary tracking-[0.2em] uppercase px-2">
+                  Recipient Email Address
+                </label>
                 <div className="relative group">
                   <input
                     type="email"
@@ -195,7 +313,10 @@ const Team = () => {
                     className="w-full bg-main border border-base rounded-[2rem] p-6 pl-16 text-sm text-primary placeholder:text-slate-300 focus:ring-8 focus:ring-indigo-500/5 focus:border-indigo-500/50 outline-none transition-all font-bold"
                     placeholder="teammate@company.com"
                   />
-                  <Mail className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-indigo-500 transition-colors" size={20} />
+                  <Mail
+                    className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-indigo-500 transition-colors"
+                    size={20}
+                  />
                 </div>
               </div>
 
@@ -204,10 +325,15 @@ const Team = () => {
                 disabled={loading}
                 className="w-full py-6 bg-slate-900 dark:bg-indigo-600 text-white rounded-[2rem] font-black text-xs uppercase tracking-[0.3em] shadow-2xl shadow-indigo-500/20 active:scale-95 transition-all disabled:opacity-50 flex items-center justify-center gap-4 group"
               >
-                {loading ? "Establishing Link..." : (
+                {loading ? (
+                  "Establishing Link..."
+                ) : (
                   <>
                     <span>Send Invitation</span>
-                    <Send size={18} className="group-hover:translate-x-1 group-hover:-translate-y-1 transition-transform" />
+                    <Send
+                      size={18}
+                      className="group-hover:translate-x-1 group-hover:-translate-y-1 transition-transform"
+                    />
                   </>
                 )}
               </button>
@@ -215,6 +341,25 @@ const Team = () => {
           </div>
         </div>
       )}
+
+      {/* Premium Limit Reached Popup */}
+      <PremiumLimitModal
+        isOpen={showPremiumModal}
+        onClose={() => setShowPremiumModal(false)}
+        title="Team Limit Reached"
+        message={premiumModalMessage}
+      />
+
+      {/* Custom Dialog Alert/Confirm */}
+      <CustomDialog
+        isOpen={confirmDialog.isOpen}
+        onClose={() => setConfirmDialog((prev) => ({ ...prev, isOpen: false }))}
+        title={confirmDialog.title}
+        message={confirmDialog.message}
+        type={confirmDialog.type}
+        confirmText={confirmDialog.confirmText}
+        onConfirm={confirmDialog.onConfirm}
+      />
     </div>
   );
 };

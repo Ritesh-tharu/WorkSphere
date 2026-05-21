@@ -20,6 +20,7 @@ import PaymentSuccess from "./Component/PaymentSuccess";
 import PaymentFailure from "./Component/PaymentFailure";
 import AdminDashboard from "./Component/AdminDashboard";
 import AdminProtectedRoute from "./Component/AdminProtectedRoute";
+import AdminLogin from "./Component/AdminLogin";
 import "./App.css";
 
 function App() {
@@ -34,6 +35,7 @@ function App() {
         {/* Public Routes */}
         <Route path="/" element={<Landing />} />
         <Route path="/login" element={<Login />} />
+        <Route path="/admin-login" element={<AdminLogin />} />
         <Route path="/signup" element={<Signup />} />
         <Route path="/verify-otp" element={<VerifyOTP />} />
         <Route path="/pricing" element={<Pricing />} />
@@ -50,6 +52,7 @@ function App() {
         {/* Admin Routes (Protected) */}
         <Route element={<AdminProtectedRoute />}>
           <Route path="/admin/dashboard" element={<AdminDashboard />} />
+          <Route path="/admin-dashboard" element={<AdminDashboard />} />
         </Route>
 
         {/* Invitation Route (usually public but handles its own auth) */}

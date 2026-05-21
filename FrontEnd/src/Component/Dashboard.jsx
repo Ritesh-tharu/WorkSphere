@@ -62,7 +62,12 @@ const Dashboard = () => {
   const [showTaskModal, setShowTaskModal] = useState(false);
   const [calendarKey, setCalendarKey] = useState(0);
   const [globalSearch, setGlobalSearch] = useState("");
-  const [globalSearchResults, setGlobalSearchResults] = useState({ tasks: [], projects: [], users: [], notes: [] });
+  const [globalSearchResults, setGlobalSearchResults] = useState({
+    tasks: [],
+    projects: [],
+    users: [],
+    notes: [],
+  });
   const [searchLoading, setSearchLoading] = useState(false);
   const [showProfileDetails, setShowProfileDetails] = useState(false);
   const profileRef = useRef(null);
@@ -244,10 +249,11 @@ const Dashboard = () => {
         if (id === "dashboard") setSelectedProjectId(null);
         if (onClick) onClick();
       }}
-      className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all duration-300 group ${activeView === id
-        ? "bg-indigo-600 shadow-lg shadow-indigo-600/20 text-white font-semibold border-transparent"
-        : "text-secondary hover:bg-indigo-50 dark:hover:bg-indigo-500/5 hover:text-indigo-600"
-        }`}
+      className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all duration-300 group ${
+        activeView === id
+          ? "bg-indigo-600 shadow-lg shadow-indigo-600/20 text-white font-semibold border-transparent"
+          : "text-secondary hover:bg-indigo-50 dark:hover:bg-indigo-500/5 hover:text-indigo-600"
+      }`}
     >
       <Icon
         className={`w-[18px] h-[18px] ${activeView === id ? "text-white" : "text-secondary group-hover:text-indigo-600 transition-colors"}`}
@@ -342,16 +348,22 @@ const Dashboard = () => {
                         <div className="p-1.5 bg-white/20 rounded-lg">
                           <User className="w-4 h-4" />
                         </div>
-                        <span className="text-xs font-bold uppercase tracking-widest">Profile</span>
+                        <span className="text-xs font-bold uppercase tracking-widest">
+                          Profile
+                        </span>
                       </div>
                       {user.role === "admin" && (
                         <div className="flex items-center gap-1 bg-emerald-500/30 px-2 py-0.5 rounded-full border border-emerald-400/30">
                           <ShieldCheck className="w-3 h-3" />
-                          <span className="text-[10px] font-black uppercase">Admin</span>
+                          <span className="text-[10px] font-black uppercase">
+                            Admin
+                          </span>
                         </div>
                       )}
                     </div>
-                    <p className="text-lg font-black tracking-tight">{user.name}</p>
+                    <p className="text-lg font-black tracking-tight">
+                      {user.name}
+                    </p>
                     <p className="text-xs opacity-70 truncate">{user.email}</p>
                   </div>
 
@@ -361,18 +373,26 @@ const Dashboard = () => {
                         <div className="flex items-center justify-between bg-amber-50 dark:bg-amber-500/10 p-3 rounded-xl border border-amber-200/50 dark:border-amber-500/20">
                           <div className="flex items-center gap-2">
                             <Clock className="w-4 h-4 text-amber-600" />
-                            <span className="text-xs font-bold text-amber-900 dark:text-amber-200">Days Remaining</span>
+                            <span className="text-xs font-bold text-amber-900 dark:text-amber-200">
+                              Days Remaining
+                            </span>
                           </div>
-                          <span className="text-lg font-black text-amber-600">{getDaysLeft(user.subscriptionExpires)}</span>
+                          <span className="text-lg font-black text-amber-600">
+                            {getDaysLeft(user.subscriptionExpires)}
+                          </span>
                         </div>
 
                         <div className="space-y-2">
-                          <p className="text-[10px] font-black text-secondary uppercase tracking-[0.2em]">Premium Benefits</p>
+                          <p className="text-[10px] font-black text-secondary uppercase tracking-[0.2em]">
+                            Premium Benefits
+                          </p>
                           <div className="space-y-1.5">
                             {premiumFeatures.map((f, i) => (
                               <div key={i} className="flex items-center gap-2">
                                 <CheckCircle className="w-3 h-3 text-indigo-500" />
-                                <span className="text-[11px] font-medium text-primary/80">{f}</span>
+                                <span className="text-[11px] font-medium text-primary/80">
+                                  {f}
+                                </span>
                               </div>
                             ))}
                           </div>
@@ -380,7 +400,9 @@ const Dashboard = () => {
                       </>
                     ) : (
                       <div className="text-center py-2">
-                        <p className="text-xs text-secondary mb-3">Upgrade to unlock all features</p>
+                        <p className="text-xs text-secondary mb-3">
+                          Upgrade to unlock all features
+                        </p>
                         <button
                           onClick={() => {
                             setShowProfileDetails(false);
@@ -397,8 +419,8 @@ const Dashboard = () => {
               )}
             </AnimatePresence>
 
-            <div 
-              className={`flex items-center gap-3 mb-4 p-2 -mx-2 rounded-xl transition-all cursor-pointer group ${showProfileDetails ? 'bg-indigo-50 dark:bg-indigo-500/10' : 'hover:bg-main'}`}
+            <div
+              className={`flex items-center gap-3 mb-4 p-2 -mx-2 rounded-xl transition-all cursor-pointer group ${showProfileDetails ? "bg-indigo-50 dark:bg-indigo-500/10" : "hover:bg-main"}`}
               onClick={() => setShowProfileDetails(!showProfileDetails)}
             >
               <div className="w-9 h-9 rounded-full bg-main flex items-center justify-center overflow-hidden border border-base shadow-sm group-hover:border-indigo-500/50 transition-colors">
@@ -426,7 +448,7 @@ const Dashboard = () => {
                     )}
                   </div>
                   <p className="text-[10px] text-secondary truncate">
-                    {user.role === "admin" ? "Administrator" : user.email}
+                    {user.role === "admin" ? "User" : user.email}
                   </p>
                 </div>
               )}
@@ -440,7 +462,7 @@ const Dashboard = () => {
             className="w-full flex items-center gap-3 px-3 py-2 text-xs font-bold text-rose-500 hover:bg-rose-50 rounded-xl transition-all"
           >
             <ArrowRightOnRectangleIcon className="w-4 h-4" />
-            {sidebarOpen && <span>Sign out</span>}
+            {sidebarOpen && <span>Log out</span>}
           </button>
         </div>
       </aside>
@@ -520,7 +542,6 @@ const Dashboard = () => {
         <div className="flex-1 overflow-auto custom-scrollbar">
           {activeView === "dashboard" && (
             <div className=" mx-auto p-12 space-y-12 animate-in fade-in slide-in-from-bottom-4 duration-700">
-
               {/* SEARCH RESULTS SECTION */}
               {globalSearch.trim() && (
                 <div className="space-y-6 animate-in slide-in-from-top-4 duration-500">
@@ -533,7 +554,10 @@ const Dashboard = () => {
                       )}
                       Search Results
                     </h2>
-                    <button onClick={() => setGlobalSearch("")} className="text-[10px] font-black text-secondary hover:text-primary uppercase tracking-widest">
+                    <button
+                      onClick={() => setGlobalSearch("")}
+                      className="text-[10px] font-black text-secondary hover:text-primary uppercase tracking-widest"
+                    >
                       Clear results
                     </button>
                   </div>
@@ -542,9 +566,11 @@ const Dashboard = () => {
                     {/* PROJECTS SECTION */}
                     {globalSearchResults.projects?.length > 0 && (
                       <div className="space-y-4">
-                        <h3 className="text-[10px] font-black text-secondary uppercase tracking-widest opacity-60">Boards ({globalSearchResults.projects.length})</h3>
+                        <h3 className="text-[10px] font-black text-secondary uppercase tracking-widest opacity-60">
+                          Boards ({globalSearchResults.projects.length})
+                        </h3>
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                          {globalSearchResults.projects.map(p => (
+                          {globalSearchResults.projects.map((p) => (
                             <button
                               key={p._id}
                               onClick={() => {
@@ -556,13 +582,19 @@ const Dashboard = () => {
                             >
                               <div
                                 className="w-10 h-10 rounded-xl flex items-center justify-center text-white"
-                                style={{ backgroundColor: p.color || '#6366f1' }}
+                                style={{
+                                  backgroundColor: p.color || "#6366f1",
+                                }}
                               >
                                 <ViewColumnsIcon className="w-5 h-5" />
                               </div>
                               <div className="text-left">
-                                <p className="text-sm font-black text-primary uppercase tracking-tighter">{p.name}</p>
-                                <p className="text-[9px] font-bold text-secondary uppercase tracking-widest opacity-60">Jump to Board</p>
+                                <p className="text-sm font-black text-primary uppercase tracking-tighter">
+                                  {p.name}
+                                </p>
+                                <p className="text-[9px] font-bold text-secondary uppercase tracking-widest opacity-60">
+                                  Jump to Board
+                                </p>
                               </div>
                             </button>
                           ))}
@@ -573,9 +605,11 @@ const Dashboard = () => {
                     {/* TASKS SECTION */}
                     {globalSearchResults.tasks?.length > 0 && (
                       <div className="space-y-4">
-                        <h3 className="text-[10px] font-black text-secondary uppercase tracking-widest opacity-60">Tasks ({globalSearchResults.tasks.length})</h3>
+                        <h3 className="text-[10px] font-black text-secondary uppercase tracking-widest opacity-60">
+                          Tasks ({globalSearchResults.tasks.length})
+                        </h3>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                          {globalSearchResults.tasks.map(task => (
+                          {globalSearchResults.tasks.map((task) => (
                             <div
                               key={task._id}
                               onClick={() => {
@@ -585,11 +619,16 @@ const Dashboard = () => {
                               className="bg-card p-4 rounded-xl border border-indigo-500/20 hover:border-indigo-500 transition-all cursor-pointer group flex items-center justify-between"
                             >
                               <div className="flex items-center gap-4">
-                                <div className={`w-2 h-2 rounded-full ${task.status === 'completed' ? 'bg-emerald-500' : 'bg-amber-500'}`} />
+                                <div
+                                  className={`w-2 h-2 rounded-full ${task.status === "completed" ? "bg-emerald-500" : "bg-amber-500"}`}
+                                />
                                 <div>
-                                  <p className="text-sm font-bold text-primary group-hover:text-indigo-600 transition-colors uppercase tracking-tight">{task.title}</p>
+                                  <p className="text-sm font-bold text-primary group-hover:text-indigo-600 transition-colors uppercase tracking-tight">
+                                    {task.title}
+                                  </p>
                                   <p className="text-[10px] text-secondary font-bold opacity-60">
-                                    {task.project?.name || "Global Workspace"} • {task.status.toUpperCase()}
+                                    {task.project?.name || "Global Workspace"} •{" "}
+                                    {task.status.toUpperCase()}
                                   </p>
                                 </div>
                               </div>
@@ -603,9 +642,11 @@ const Dashboard = () => {
                     {/* NOTES SECTION */}
                     {globalSearchResults.notes?.length > 0 && (
                       <div className="space-y-4">
-                        <h3 className="text-[10px] font-black text-secondary uppercase tracking-widest opacity-60">Notes ({globalSearchResults.notes.length})</h3>
+                        <h3 className="text-[10px] font-black text-secondary uppercase tracking-widest opacity-60">
+                          Notes ({globalSearchResults.notes.length})
+                        </h3>
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                          {globalSearchResults.notes.map(note => (
+                          {globalSearchResults.notes.map((note) => (
                             <button
                               key={note._id}
                               onClick={() => {
@@ -618,8 +659,12 @@ const Dashboard = () => {
                                 <DocumentTextIcon className="w-5 h-5" />
                               </div>
                               <div className="text-left">
-                                <p className="text-sm font-black text-primary uppercase tracking-tighter truncate max-w-[150px]">{note.title}</p>
-                                <p className="text-[9px] font-bold text-secondary uppercase tracking-widest opacity-60">Open in Notes</p>
+                                <p className="text-sm font-black text-primary uppercase tracking-tighter truncate max-w-[150px]">
+                                  {note.title}
+                                </p>
+                                <p className="text-[9px] font-bold text-secondary uppercase tracking-widest opacity-60">
+                                  Open in Notes
+                                </p>
                               </div>
                             </button>
                           ))}
@@ -630,16 +675,32 @@ const Dashboard = () => {
                     {/* USER SECTION */}
                     {globalSearchResults.users?.length > 0 && (
                       <div className="space-y-4">
-                        <h3 className="text-[10px] font-black text-secondary uppercase tracking-widest opacity-60">Team Members ({globalSearchResults.users.length})</h3>
+                        <h3 className="text-[10px] font-black text-secondary uppercase tracking-widest opacity-60">
+                          Team Members ({globalSearchResults.users.length})
+                        </h3>
                         <div className="flex flex-wrap gap-4">
-                          {globalSearchResults.users.map(u => (
-                            <div key={u._id} className="flex items-center gap-3 p-2 bg-card border border-base rounded-full pr-4">
+                          {globalSearchResults.users.map((u) => (
+                            <div
+                              key={u._id}
+                              className="flex items-center gap-3 p-2 bg-card border border-base rounded-full pr-4"
+                            >
                               <div className="w-8 h-8 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-600 text-[10px] font-black border border-white">
-                                {u.profilePhoto ? <img src={u.profilePhoto} className="w-full h-full rounded-full object-cover" /> : u.name[0]}
+                                {u.profilePhoto ? (
+                                  <img
+                                    src={u.profilePhoto}
+                                    className="w-full h-full rounded-full object-cover"
+                                  />
+                                ) : (
+                                  u.name[0]
+                                )}
                               </div>
                               <div>
-                                <p className="text-[11px] font-black text-primary uppercase tracking-tight">{u.name}</p>
-                                <p className="text-[9px] font-bold text-secondary opacity-60">{u.email}</p>
+                                <p className="text-[11px] font-black text-primary uppercase tracking-tight">
+                                  {u.name}
+                                </p>
+                                <p className="text-[9px] font-bold text-secondary opacity-60">
+                                  {u.email}
+                                </p>
                               </div>
                             </div>
                           ))}
@@ -647,15 +708,24 @@ const Dashboard = () => {
                       </div>
                     )}
 
-                    {(!globalSearchResults.tasks?.length && !globalSearchResults.projects?.length && !globalSearchResults.notes?.length && !globalSearchResults.users?.length) && !searchLoading && (
-                      <div className="py-20 text-center bg-slate-50 border border-dashed border-base rounded-3xl">
-                        <div className="w-16 h-16 bg-white rounded-2xl shadow-sm flex items-center justify-center mx-auto mb-4 border border-base">
-                          <MagnifyingGlassIcon className="w-8 h-8 text-slate-300" />
+                    {!globalSearchResults.tasks?.length &&
+                      !globalSearchResults.projects?.length &&
+                      !globalSearchResults.notes?.length &&
+                      !globalSearchResults.users?.length &&
+                      !searchLoading && (
+                        <div className="py-20 text-center bg-slate-50 border border-dashed border-base rounded-3xl">
+                          <div className="w-16 h-16 bg-white rounded-2xl shadow-sm flex items-center justify-center mx-auto mb-4 border border-base">
+                            <MagnifyingGlassIcon className="w-8 h-8 text-slate-300" />
+                          </div>
+                          <p className="text-sm font-black text-primary uppercase tracking-tight">
+                            No matches found anywhere
+                          </p>
+                          <p className="text-[10px] font-bold text-secondary uppercase tracking-widest mt-1">
+                            Try searching for tasks, projects, notes or team
+                            members
+                          </p>
                         </div>
-                        <p className="text-sm font-black text-primary uppercase tracking-tight">No matches found anywhere</p>
-                        <p className="text-[10px] font-bold text-secondary uppercase tracking-widest mt-1">Try searching for tasks, projects, notes or team members</p>
-                      </div>
-                    )}
+                      )}
                   </div>
                   <div className="h-[1px] bg-base w-full" />
                 </div>
@@ -848,7 +918,9 @@ const Dashboard = () => {
               }}
             />
           )}
-          {activeView === "notifications" && <NotificationsCenter />}
+          {activeView === "notifications" && (
+            <NotificationsCenter onUpdateUnreadCount={setUnreadCount} />
+          )}
           {activeView === "team" && <Team />}
           {activeView === "notes" && (
             <Note selectedProjectId={selectedProjectId} />
@@ -873,8 +945,8 @@ const Dashboard = () => {
             />
           )}
         </div>
-      </main >
-    </div >
+      </main>
+    </div>
   );
 };
 

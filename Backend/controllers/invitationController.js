@@ -23,11 +23,16 @@ exports.sendInvite = async (req, res) => {
     const existingUser = await User.findOne({ email });
     if (existingUser) {
       // Add to team if already registered
-      // Check team limit for free users
       const inviter = await User.findById(inviterId);
+      if (!inviter) {
+        return res.status(404).json({ message: "Inviter not found" });
+      }
+
+      // Check team limit for free users
       if (inviter.plan === "free" && inviter.teamMembers.length >= 5) {
         return res.status(403).json({
-          message: "Team member limit reached. Free users can only have up to 5 team members across all projects.",
+          message:
+            "Team member limit reached. Free users can only have up to 5 team members across all projects.",
           isLimitReached: true,
         });
       }
@@ -225,6 +230,9 @@ exports.resendInvite = async (req, res) => {
 
     // Get inviter details
     const inviter = await User.findById(userId);
+    if (!inviter) {
+      return res.status(404).json({ message: "Inviter not found" });
+    }
 
     // Send email
     await sendInvitationEmail(invitation.email, token, inviter.name);
@@ -246,6 +254,10 @@ exports.getTeamMembers = async (req, res) => {
       "name email phoneNumber profilePhoto jobTitle role",
     );
 
+    if (!user) {
+      return res.json([]);
+    }
+
     res.json(user.teamMembers || []);
   } catch (error) {
     console.error("Error getting team members:", error);
@@ -260,7 +272,7 @@ exports.cancelInvite = async (req, res) => {
 
     const invitation = await Invitation.findOne({
       _id: id,
-      invitedBy: userId
+      invitedBy: userId,
     });
 
     if (!invitation) {

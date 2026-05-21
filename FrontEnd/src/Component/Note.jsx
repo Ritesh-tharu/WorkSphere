@@ -19,6 +19,8 @@ import {
   Save,
   RotateCcw
 } from "lucide-react";
+import PremiumLimitModal from "./PremiumLimitModal";
+import CustomDialog from "./CustomDialog";
 
 const Note = ({ selectedProjectId }) => {
   const [notes, setNotes] = useState([]);
@@ -27,6 +29,16 @@ const Note = ({ selectedProjectId }) => {
   const [editingNote, setEditingNote] = useState(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [activeFilter, setActiveFilter] = useState("all"); // all, pinned, archived
+  const [showPremiumModal, setShowPremiumModal] = useState(false);
+  const [premiumModalMessage, setPremiumModalMessage] = useState("");
+  const [confirmDialog, setConfirmDialog] = useState({
+    isOpen: false,
+    title: "",
+    message: "",
+    type: "confirm",
+    confirmText: "Confirm",
+    onConfirm: null,
+  });
   
   // Note Form State
   const [noteForm, setNoteForm] = useState({
@@ -75,7 +87,14 @@ const Note = ({ selectedProjectId }) => {
   const handleCreateOrUpdate = async () => {
     // If both are empty, don't save
     if (!noteForm.title.trim() && !noteForm.content.trim()) {
-      alert("Please enter a title or some content for your note.");
+      setConfirmDialog({
+        isOpen: true,
+        title: "Empty Note",
+        message: "Please enter a title or some content for your note.",
+        type: "warning",
+        confirmText: "OK",
+        onConfirm: () => setConfirmDialog((prev) => ({ ...prev, isOpen: false })),
+      });
       return;
     }
 
@@ -96,8 +115,17 @@ const Note = ({ selectedProjectId }) => {
         });
         setNotes([res.data, ...notes]);
       }
-      alert("Note saved successfully!");
-      closeModal();
+      setConfirmDialog({
+        isOpen: true,
+        title: "Success",
+        message: "Note saved successfully!",
+        type: "success",
+        confirmText: "Great",
+        onConfirm: () => {
+          setConfirmDialog((prev) => ({ ...prev, isOpen: false }));
+          closeModal();
+        },
+      });
     } catch (error) {
       console.error("Error saving note:", error);
       if (
@@ -105,30 +133,38 @@ const Note = ({ selectedProjectId }) => {
         error.response.status === 403 &&
         error.response.data.isLimitReached
       ) {
-        if (
-          window.confirm(
-            error.response.data.message + " \n\nWould you like to upgrade to Premium?"
-          )
-        ) {
-          window.location.href = "/pricing";
-        }
+        setPremiumModalMessage(error.response.data.message);
+        setShowPremiumModal(true);
       } else {
-        alert(
-          "Error saving note: " +
-            (error.response?.data?.message || error.message)
-        );
+        setConfirmDialog({
+          isOpen: true,
+          title: "Save Failed",
+          message: "Error saving note: " + (error.response?.data?.message || error.message),
+          type: "warning",
+          confirmText: "OK",
+          onConfirm: () => setConfirmDialog((prev) => ({ ...prev, isOpen: false })),
+        });
       }
     }
   };
 
-  const deleteNote = async (id) => {
-    if (!window.confirm("Are you sure you want to delete this note?")) return;
-    try {
-      await axiosInstance.delete(`/notes/${id}`);
-      setNotes(notes.filter((n) => n._id !== id));
-    } catch (error) {
-      console.error("Error deleting note:", error);
-    }
+  const deleteNote = (id) => {
+    setConfirmDialog({
+      isOpen: true,
+      title: "Delete Note",
+      message: "Are you sure you want to delete this note?",
+      type: "danger",
+      confirmText: "Delete Note",
+      onConfirm: async () => {
+        try {
+          await axiosInstance.delete(`/notes/${id}`);
+          setNotes(notes.filter((n) => n._id !== id));
+        } catch (error) {
+          console.error("Error deleting note:", error);
+        }
+        setConfirmDialog((prev) => ({ ...prev, isOpen: false }));
+      },
+    });
   };
 
   const togglePin = async (e, note) => {
@@ -441,6 +477,14 @@ const Note = ({ selectedProjectId }) => {
           </div>
         </div>
       )}
+
+      {/* Premium Limit Reached Popup */}
+      <PremiumLimitModal
+        isOpen={showPremiumModal}
+        onClose={() => setShowPremiumModal(false)}
+        title="Note Limit Reached"
+        message={premiumModalMessage}
+      />
     </div>
   );
 };

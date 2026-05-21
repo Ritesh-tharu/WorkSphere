@@ -6,6 +6,8 @@ const {
   getAllUsers,
   updateUser,
   deleteUser,
+  getPricing,
+  updatePricing,
 } = require("../controllers/adminController");
 const { protect } = require("../middleware/authMiddleware");
 const { adminProtect } = require("../middleware/adminMiddleware");
@@ -18,5 +20,7 @@ router.get("/stats", getAdminStats);
 router.get("/users", getAllUsers);
 router.put("/users/:id", updateUser);
 router.delete("/users/:id", deleteUser);
+router.get("/pricing", getPricing);
+router.put("/pricing", updatePricing);
 
 module.exports = router;

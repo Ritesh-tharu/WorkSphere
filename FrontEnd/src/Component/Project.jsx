@@ -17,6 +17,8 @@ import {
 import { ViewColumnsIcon } from "@heroicons/react/24/outline";
 import { CheckCircleIcon as CheckCircleIconSolidInner } from "@heroicons/react/24/solid";
 import TaskBoard from "./TaskBoard";
+import PremiumLimitModal from "./PremiumLimitModal";
+import CustomDialog from "./CustomDialog";
 
 /**
  * ProjectManager - High Fidelity Workspace Management
@@ -31,6 +33,16 @@ const ProjectManager = ({ initialSelectedId, globalSearch }) => {
   const [activeMenuId, setActiveMenuId] = useState(null); // Track board context menu
   const [editingProject, setEditingProject] = useState(null); // Track board being edited
   const [showVisibilityDropdown, setShowVisibilityDropdown] = useState(false);
+  const [showPremiumModal, setShowPremiumModal] = useState(false);
+  const [premiumModalMessage, setPremiumModalMessage] = useState("");
+  const [confirmDialog, setConfirmDialog] = useState({
+    isOpen: false,
+    title: "",
+    message: "",
+    type: "confirm",
+    confirmText: "Confirm",
+    onConfirm: null,
+  });
 
   const [newProject, setNewProject] = useState({
     name: "",
@@ -124,36 +136,39 @@ const ProjectManager = ({ initialSelectedId, globalSearch }) => {
         error.response.status === 403 &&
         error.response.data.isLimitReached
       ) {
-        if (
-          window.confirm(
-            error.response.data.message +
-              " Would you like to upgrade to Premium?",
-          )
-        ) {
-          // This component doesn't have navigate, I should probably pass it or use a redirect.
-          // For now, I'll use window.location if navigate isn't available easily.
-          window.location.href = "/pricing";
-        }
+        setPremiumModalMessage(error.response.data.message);
+        setShowPremiumModal(true);
       } else {
-        alert(error.response?.data?.message || "Failed to save project");
+        setConfirmDialog({
+          isOpen: true,
+          title: "Save Failed",
+          message: error.response?.data?.message || "Failed to save project.",
+          type: "warning",
+          confirmText: "OK",
+          onConfirm: () => setConfirmDialog((prev) => ({ ...prev, isOpen: false })),
+        });
       }
     }
   };
 
-  const handleDeleteProject = async (projectId) => {
-    if (
-      !window.confirm(
-        "Are you sure? This will permanently delete the board and all its tasks.",
-      )
-    )
-      return;
-    try {
-      await axiosInstance.delete(`/projects/${projectId}`);
-      setProjects(projects.filter((p) => p._id !== projectId));
-      setActiveMenuId(null);
-    } catch (error) {
-      console.error("Error deleting project:", error);
-    }
+  const handleDeleteProject = (projectId) => {
+    setConfirmDialog({
+      isOpen: true,
+      title: "Delete Project",
+      message: "Are you sure? This will permanently delete the board and all its tasks.",
+      type: "danger",
+      confirmText: "Delete Project",
+      onConfirm: async () => {
+        try {
+          await axiosInstance.delete(`/projects/${projectId}`);
+          setProjects(projects.filter((p) => p._id !== projectId));
+          setActiveMenuId(null);
+        } catch (error) {
+          console.error("Error deleting project:", error);
+        }
+        setConfirmDialog((prev) => ({ ...prev, isOpen: false }));
+      },
+    });
   };
 
   const openEditModal = (project) => {
@@ -537,6 +552,25 @@ const ProjectManager = ({ initialSelectedId, globalSearch }) => {
           </div>
         </div>
       )}
+
+      {/* Premium Limit Reached Popup */}
+      <PremiumLimitModal
+        isOpen={showPremiumModal}
+        onClose={() => setShowPremiumModal(false)}
+        title="Project Limit Reached"
+        message={premiumModalMessage}
+      />
+
+      {/* Custom Dialog Alert/Confirm */}
+      <CustomDialog
+        isOpen={confirmDialog.isOpen}
+        onClose={() => setConfirmDialog((prev) => ({ ...prev, isOpen: false }))}
+        title={confirmDialog.title}
+        message={confirmDialog.message}
+        type={confirmDialog.type}
+        confirmText={confirmDialog.confirmText}
+        onConfirm={confirmDialog.onConfirm}
+      />
     </div>
   );
 };
